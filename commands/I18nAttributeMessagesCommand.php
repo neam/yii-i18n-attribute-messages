@@ -7,10 +7,10 @@
  *
  * @uses CConsoleCommand
  * @license MIT
- * @author See https://github.com/neam/yii-i18n-columns/graphs/contributors
+ * @author See https://github.com/neam/yii-i18n-attribute-messages/graphs/contributors
  */
 
-class I18nColumnsCommand extends CConsoleCommand
+class I18nAttributeMessagesCommand extends CConsoleCommand
 {
     /**
      * @var string
@@ -405,9 +405,9 @@ class ' . $migrationName . ' extends CDbMigration
                         $model = @new $fileClassName;
                         if (method_exists($model, 'behaviors')) {
                             $behaviors = $model->behaviors();
-                            if (isset($behaviors['i18n-columns']) && strpos(
-                                    $behaviors['i18n-columns']['class'],
-                                    'I18nColumnsBehavior'
+                            if (isset($behaviors['i18n-attribute-messages']) && strpos(
+                                    $behaviors['i18n-attribute-messages']['class'],
+                                    'I18nAttributeMessagesBehavior'
                                 ) !== false
                             ) {
                                 $models[$classname] = $model;

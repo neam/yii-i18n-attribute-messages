@@ -1,13 +1,13 @@
 <?php
 
 /**
- * I18nColumnsBehavior
+ * I18nAttributeMessagesBehavior
  *
  * @uses CActiveRecordBehavior
  * @license MIT
- * @author See https://github.com/neam/yii-i18n-columns/graphs/contributors
+ * @author See https://github.com/neam/yii-i18n-attribute-messages/graphs/contributors
  */
-class I18nColumnsBehavior extends CActiveRecordBehavior
+class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 {
 
     /**

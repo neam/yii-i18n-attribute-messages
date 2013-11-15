@@ -1,18 +1,14 @@
 {
-    "name": "neam/yii-i18n-columns",
-    "description": "Transparent attribute translation for ActiveRecords, without requiring lookup tables for translated field contents.",
+    "name": "neam/yii-i18n-attribute-messages",
+    "description": "Transparent attribute translation for ActiveRecords, leveraging Yii's built-in translation features for translated field contents.",
     "keywords": ["yii", "translation", "i18n"],
-    "homepage": "https://github.com/neam/yii-i18n-columns",
+    "homepage": "https://github.com/neam/yii-i18n-attribute-messages",
     "type": "yii-extension",
     "license": "MIT",
     "authors": [
         {
             "name": "Fredrik Wollsén",
             "email": "fredrik@neam.se"
-        },
-        {
-            "name": "Andrej Bubis",
-            "email": "firstrow@gmail.com"
         }
     ],
     "repositories": [

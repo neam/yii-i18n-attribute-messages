@@ -14,7 +14,7 @@ return array(
 
     // i18n-columns
     'aliases' => array(
-        'i18n-columns' => dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..',
+        'i18n-attribute-messages' => dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..',
     ),
     'language' => 'en',
 
@@ -22,7 +22,7 @@ return array(
 	'import'=>array(
 		'application.models.*',
 		'application.components.*',
-        'i18n-columns.behaviors.I18nColumnsBehavior',
+        'i18n-attribute-messages.behaviors.I18nAttributeMessagesBehavior',
 	),
 
 	'modules'=>array(

@@ -11,15 +11,15 @@ return array(
 
     // i18n-columns
     'aliases' => array(
-        'i18n-columns' => dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..',
+        'i18n-attribute-messages' => dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..',
     ),
     'import' => array(
-        'i18n-columns.behaviors.I18nColumnsBehavior',
+        'i18n-attribute-messages.behaviors.I18nAttributeMessagesBehavior',
     ),
     'language' => 'en',
     'commandMap' => array(
-        'i18n-columns'    => array(
-            'class' => 'i18n-columns.commands.I18nColumnsCommand',
+        'i18n-attribute-messages'    => array(
+            'class' => 'i18n-attribute-messages.commands.I18nAttributeMessagesCommand',
         ),
     ),
 
