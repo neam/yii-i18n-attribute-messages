@@ -25,19 +25,13 @@ return array(
 
 	// application components
 	'components'=>array(
-        'db' => array(
-            'connectionString' => 'sqlite:'.dirname(__FILE__).'/../../../db/test.db',
-        ),
-		// uncomment the following to use a MySQL database
-		/*
 		'db'=>array(
-			'connectionString' => 'mysql:host=localhost;dbname=testdrive',
+			'connectionString' => 'mysql:host=localhost;dbname=yiam_test',
 			'emulatePrepare' => true,
-			'username' => 'root',
-			'password' => '',
+			'username' => 'yiam_test',
+			'password' => 'yiam_test',
 			'charset' => 'utf8',
 		),
-		*/
 		'log'=>array(
 			'class'=>'CLogRouter',
 			'routes'=>array(

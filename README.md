@@ -180,3 +180,20 @@ Changelog
 
 - Forked [https://github.com/neam/yii-i18n-columns](https://github.com/neam/yii-i18n-columns) v0.3.1
 
+Testing the extension
+-------------
+
+### One-time preparations
+
+Make sure to be in the extension's root directory
+
+    cd vendor/neam/yii-i18n-attribute-messages
+
+Create a database called yiam_test in your local mysql server installation. Create a user called yiam_test with yiam_test as the password and make sure that this user has access to the local database.
+
+After this, you can run the following routine to test the extension:
+
+### 1. Set-up the test database
+
+Load tests/db/unmodified.sql into the database.
+
