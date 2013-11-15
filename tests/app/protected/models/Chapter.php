@@ -18,6 +18,27 @@ class Chapter extends CActiveRecord
 {
 
 	/**
+     * Define behaviors
+     * @return array
+     */
+    public function behaviors()
+    {
+        return array_merge(
+            parent::behaviors(),
+            array(
+                'i18n-attribute-messages' => array(
+                    'class' => 'I18nAttributeMessagesBehavior',
+                    'translationAttributes' => array(
+                        'title',
+                        'slug',
+                        'book_id',
+                    ),
+                ),
+            )
+        );
+    }
+
+    /**
 	 * Returns the static model of the specified AR class.
 	 * @param string $className active record class name.
 	 * @return Chapter the static model class
