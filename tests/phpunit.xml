@@ -1,0 +1,21 @@
+<phpunit
+        bootstrap="bootstrap.php"
+        colors="false"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        processIsolation="false"
+        stopOnError="false"
+        stopOnFailure="false"
+        stopOnIncomplete="false"
+        stopOnSkipped="false"
+        strict="false"
+        verbose="false">
+
+    <testsuites>
+        <testsuite name="Unit tests">
+            <directory>unit</directory>
+        </testsuite>
+    </testsuites>
+
+</phpunit>

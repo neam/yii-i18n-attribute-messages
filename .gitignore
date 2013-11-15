@@ -1,0 +1,3 @@
+vendor
+tests/app/protected/runtime
+tests/app/assets
