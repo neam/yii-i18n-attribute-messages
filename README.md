@@ -205,3 +205,13 @@ Load tests/db/unmodified.sql into the database.
 
     tests/app/protected/yiic migrate
 
+### 4. Test the behavior
+
+Edit tests/codeception/acceptance.suite.yml
+Or start the PHP built-in webserver (only available from PHP 5.4):
+
+    php -S localhost:31415 -t app/ &
+
+Run the unit tests
+
+    php codecept.phar run

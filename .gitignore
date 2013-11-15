@@ -2,3 +2,4 @@ vendor
 tests/app/protected/runtime
 tests/app/assets
 tests/app/protected/migrations/m*i18n.php
+tests/codeception/_log/*-*
