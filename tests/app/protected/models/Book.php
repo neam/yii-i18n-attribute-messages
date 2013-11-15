@@ -5,8 +5,8 @@
  *
  * The followings are the available columns in table 'book':
  * @property string $id
- * @property string $title
- * @property string $slug
+ * @property string $_title
+ * @property string $_slug
  * @property string $image_id
  * @property string $created
  * @property string $modified
@@ -66,11 +66,11 @@ class Book extends CActiveRecord
 		return array(
 			array('id, image_id', 'required'),
 			array('id, image_id', 'length', 'max'=>20),
-			array('title, slug', 'length', 'max'=>255),
+			array('_title, _slug', 'length', 'max'=>255),
 			array('created, modified', 'safe'),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, title, slug, image_id, created, modified', 'safe', 'on'=>'search'),
+			array('id, _title, _slug, image_id, created, modified', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -83,7 +83,7 @@ class Book extends CActiveRecord
 		// class name for the relations automatically generated below.
 		return array(
 			'image' => array(self::BELONGS_TO, 'Image', 'image_id'),
-			'chapters' => array(self::HAS_MANY, 'Chapter', 'book_id'),
+			'chapters' => array(self::HAS_MANY, 'Chapter', '_book_id'),
 		);
 	}
 
@@ -94,8 +94,8 @@ class Book extends CActiveRecord
 	{
 		return array(
 			'id' => 'ID',
-			'title' => 'Title',
-			'slug' => 'Slug',
+			'_title' => 'Title',
+			'_slug' => 'Slug',
 			'image_id' => 'Image',
 			'created' => 'Created',
 			'modified' => 'Modified',
@@ -114,8 +114,8 @@ class Book extends CActiveRecord
 		$criteria=new CDbCriteria;
 
 		$criteria->compare('id',$this->id,true);
-		$criteria->compare('title',$this->title,true);
-		$criteria->compare('slug',$this->slug,true);
+		$criteria->compare('_title',$this->_title,true);
+		$criteria->compare('_slug',$this->_slug,true);
 		$criteria->compare('image_id',$this->image_id,true);
 		$criteria->compare('created',$this->created,true);
 		$criteria->compare('modified',$this->modified,true);

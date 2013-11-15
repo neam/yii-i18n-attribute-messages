@@ -201,3 +201,7 @@ Load tests/db/unmodified.sql into the database.
 
     tests/app/protected/yiic i18n-attribute-messages process
 
+### 3. Apply the migration
+
+    tests/app/protected/yiic migrate
+
