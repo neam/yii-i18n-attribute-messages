@@ -16,6 +16,11 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     public $translationAttributes = array();
 
     /**
+     * @var array list of attributes that are set, but yet to be saved
+     */
+    private $dirtyAttributes = array();
+
+    /**
      * Make translated attributes readable, with and without suffix
      */
     public function __get($name)
@@ -25,16 +30,31 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
             return parent::__get($name);
         }
 
+        // Without suffix
         if (in_array($name, $this->translationAttributes)) {
+
+            $lang = Yii::app()->language;
+            if (isset($this->dirtyAttributes[$name . '_' . $lang])) {
+                return $this->dirtyAttributes[$name . '_' . $lang];
+            }
+
             $sourceMessageAttribute = "_" . $name;
-            $sourceMessageContent = $this->owner->$sourceMessageAttribute;
+            $sourceMessageContent = $this->owner->attributes[$sourceMessageAttribute];
             return Yii::t('attributes', $sourceMessageContent);
         }
 
-        $langsuffix = $this->getLanguageSuffix($name);
+        // With suffix
         $originalAttribute = $this->getOriginalAttribute($name);
         if (in_array($originalAttribute, $this->translationAttributes)) {
-            return Yii::t('attributes', $this->owner->attributes["_" . $originalAttribute], array(), null, $langsuffix);
+
+            if (isset($this->dirtyAttributes[$name])) {
+                return $this->dirtyAttributes[$name];
+            }
+
+            $sourceMessageAttribute = "_" . $originalAttribute;
+            $sourceMessageContent = $this->owner->$sourceMessageAttribute;
+            $lang = $this->getLanguageSuffix($name);
+            return Yii::t('attributes', $sourceMessageContent, array(), null, $lang);
         }
 
     }
@@ -44,14 +64,21 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
      */
     public function __set($name, $value)
     {
+
         if (!$this->handlesProperty($name)) {
             return parent::__set($name, $value);
         }
 
-        $translatedAttribute = $name . '_' . Yii::app()->language;
-        if (array_key_exists($translatedAttribute, $this->owner->attributes)) {
-            $this->owner->$translatedAttribute = $value;
-            return;
+        // Without suffix
+        if (in_array($name, $this->translationAttributes)) {
+            $lang = Yii::app()->language;
+            $this->dirtyAttributes[$name . '_' . $lang] = $value; // Always store with suffix since we are interested in the language while setting the attribute, not while saving
+        }
+
+        // With suffix
+        $originalAttribute = $this->getOriginalAttribute($name);
+        if (in_array($originalAttribute, $this->translationAttributes)) {
+            $this->dirtyAttributes[$name] = $value;
         }
 
     }
@@ -69,7 +96,7 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
      */
     public function canSetProperty($name)
     {
-        return false;
+        return $this->handlesProperty($name);
     }
 
     /**
@@ -79,14 +106,21 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
      */
     protected function handlesProperty($name)
     {
-
         // This behavior handles translationAttributes as specified in the configuration...
         if (in_array($name, $this->translationAttributes)) {
+            $lang = Yii::app()->language;
+            if (isset($this->dirtyAttributes[$name . '_' . $lang])) {
+                return $this->dirtyAttributes[$name . '_' . $lang];
+            }
             return true;
         }
 
         // ... as well as language-code suffixed translationAttributes (title_en)
         $originalAttribute = $this->getOriginalAttribute($name);
+        $lang = Yii::app()->language;
+        if (isset($this->dirtyAttributes[$originalAttribute . '_' . $lang])) {
+            return $this->dirtyAttributes[$originalAttribute . '_' . $lang];
+        }
         return in_array($originalAttribute, $this->translationAttributes);
 
     }

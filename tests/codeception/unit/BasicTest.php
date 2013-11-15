@@ -65,6 +65,25 @@ class BasicTest extends \Codeception\TestCase\Test
 
         Yii::app()->language = 'en';
         $book->title = 'test';
+        $this->assertEquals('test', $book->title);
+        $this->assertEquals($book->title, $book->title_en);
+
+        Yii::app()->language = 'sv';
+        $this->assertNotEquals($book->title, $book->title_en);
+        $this->assertEquals($book->title, $book->title_sv);
+    }
+
+    /**
+     * @test
+     */
+    public function setWithSuffix()
+    {
+
+        $book = new Book;
+
+        Yii::app()->language = 'en';
+        $book->title_en = 'test';
+        $this->assertEquals('test', $book->title_en);
         $this->assertEquals($book->title, $book->title_en);
 
         Yii::app()->language = 'sv';
