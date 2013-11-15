@@ -60,12 +60,12 @@ If you don't use composer, clone or download this project into /path/to/your/app
     ),
 
 
-### Reference the translate command in console.php
+### Reference the console command in console.php
 
     'commandMap' => array(
         ...
-        'i18n-columns'    => array(
-            'class' => 'i18n-columns.commands.I18nColumnsCommand',
+        'i18n-attribute-messages'    => array(
+            'class' => 'i18n-attribute-messages.commands.I18nAttributeMessagesCommand',
         ),
         ...
     ),
@@ -93,7 +93,7 @@ If you don't use composer, clone or download this project into /path/to/your/app
 
 #### 2. Create migration from command line:
 
-`./yiic i18n-columns process`
+`./yiic i18n-attribute-messages process`
 
 Prior to this, you should already have configured a default language (`$config['language']`) and available languages (`$config['components']['langHandler']['languages']`) for your app.
 
@@ -103,33 +103,35 @@ Run with `--verbose` to see more detailed output.
 
 `./yiic migrate`
 
-This will rename the fields that are defined in translationAttributes to fieldname_defaultlanguagecode and add columns for the remaining languages.
+This will rename the fields that are defined in translationAttributes to _fieldname, which will be the placed that the source content is stored (the content that is to be translated).
 
 Sample migration file:
 
 	<?php
-	class m130708_165204_i18n extends CDbMigration
-	{
-	    public function up()
-	    {
-		$this->renameColumn('section', 'title', 'title_en');
-		$this->renameColumn('section', 'slug', 'slug_en');
-		$this->addColumn('section', 'title_sv', 'varchar(255) null');
-		$this->addColumn('section', 'slug_sv', 'varchar(255) null');
-		$this->addColumn('section', 'title_de', 'varchar(255) null');
-		$this->addColumn('section', 'slug_de', 'varchar(255) null');
-	    }
+    class m131115_204413_i18n extends CDbMigration
+    {
+        public function up()
+        {
+            $this->renameColumn('book', 'title', '_title');
+            $this->renameColumn('book', 'slug', '_slug');
+            $this->renameColumn('chapter', 'title', '_title');
+            $this->renameColumn('chapter', 'slug', '_slug');
+            $this->dropForeignKey('fk_chapter_book', 'chapter');
+            $this->renameColumn('chapter', 'book_id', '_book_id');
+            $this->addForeignKey('fk_chapter_book', 'chapter', '_book_id', 'book', 'id', 'NO ACTION', 'NO ACTION');
+        }
 
-	    public function down()
-	    {
-	      $this->renameColumn('section', 'title_en', 'title');
-	      $this->renameColumn('section', 'slug_en', 'slug');
-	      $this->dropColumn('section', 'title_sv');
-	      $this->dropColumn('section', 'slug_sv');
-	      $this->dropColumn('section', 'title_de');
-	      $this->dropColumn('section', 'slug_de');
-	    }
-	}
+        public function down()
+        {
+          $this->renameColumn('book', '_title', 'title');
+          $this->renameColumn('book', '_slug', 'slug');
+          $this->renameColumn('chapter', '_title', 'title');
+          $this->renameColumn('chapter', '_slug', 'slug');
+          $this->dropForeignKey('fk_chapter_book', 'chapter');
+          $this->renameColumn('chapter', '_book_id', 'book_id');
+          $this->addForeignKey('fk_chapter_book', 'chapter', 'book_id', 'book', 'id', 'NO ACTION', 'NO ACTION');
+        }
+    }
 
 #### 4. Re-generate models
 
