@@ -197,3 +197,7 @@ After this, you can run the following routine to test the extension:
 
 Load tests/db/unmodified.sql into the database.
 
+### 2. Run the console command
+
+    tests/app/protected/yiic i18n-attribute-messages process
+

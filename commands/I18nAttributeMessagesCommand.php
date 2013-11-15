@@ -83,15 +83,9 @@ class I18nAttributeMessagesCommand extends CConsoleCommand
         if ((Yii::app()->db->schema instanceof CSqliteSchema) !== false) {
             throw new CException("Sqlite does not support adding foreign keys, renaming columns or even add new columns that have a NOT NULL constraint, so this command can not support sqlite. Sorry.");
         }
-
-        //
-        $this->d("Loading languages\n");
-        $this->_loadLanguages();
-
         $this->models = $this->_getModels();
-
         if (sizeof($this->models) == 0) {
-            throw new CException("Found no models with i18nColumns behavior attached");
+            throw new CException("Found no models with I18nAttributeMessages behavior attached");
         }
     }
 
@@ -108,11 +102,8 @@ class I18nAttributeMessagesCommand extends CConsoleCommand
         foreach ($this->models as $modelName => $model) {
             $this->d("\t...$modelName: \n");
             $behaviors = $model->behaviors();
-            foreach ($behaviors['i18n-columns']['translationAttributes'] as $attribute) {
-                foreach ($this->languages as $lang) {
-                    $this->d("\t\t$lang: ");
-                    $this->_processAttribute($lang, $model, $attribute);
-                }
+            foreach ($behaviors['i18n-attribute-messages']['translationAttributes'] as $attribute) {
+                $this->_processAttribute($model, $attribute);
                 $this->d("\n");
             }
         }
@@ -121,140 +112,48 @@ class I18nAttributeMessagesCommand extends CConsoleCommand
     }
 
     /**
+     * Rename columns back and forth for the source language column
      * @param $lang
      * @param $model
      */
-    protected function _processAttribute($lang, $model, $translationAttribute)
+    protected function _processAttribute($model, $translationAttribute)
     {
-        $i18nName = $translationAttribute . '_' . $lang;
-        $sourceLanguageAttribute = $translationAttribute . '_' . $this->sourceLanguage;
+        $from = $translationAttribute;
+        $to = '_' . $translationAttribute;
 
-        // Determine source column
-        $attribute = null;
-        if ($this->_checkColumnExists($model, $translationAttribute)) {
-            $attribute = $translationAttribute;
-        } elseif ($this->_checkColumnExists($model, $sourceLanguageAttribute)) {
-            $attribute = $sourceLanguageAttribute;
-        } else {
-            throw new CException("No source attribute was found (neither $translationAttribute nor $sourceLanguageAttribute found in {$model->tableName()})");
-        }
+        $this->d("\t$from -> $to\n");
 
-        $this->d("\t$i18nName ($attribute)\n");
-
-        if (!isset($model->metaData->columns[$i18nName])) {
+        if ($this->_checkColumnExists($model, $from) && !$this->_checkColumnExists($model, $to)) {
 
             // Foreign key checks
-            $attributeFk = $this->attributeFk($model, $attribute);
+            $fromFk = $this->attributeFk($model, $from);
 
-            // Rename columns back and forth for the source language column (avoiding data loss compared to dropping and creating a new column instead)
-            if ($lang == $this->sourceLanguage && $attribute != $sourceLanguageAttribute) {
-                // Remove fks before rename
-                if (!is_null($attributeFk)) {
-                    $this->up[] = $this->down[] = '$this->dropForeignKey(\'' . $attributeFk["CONSTRAINT_NAME"]
-                        . '\', \'' . $model->tableName() . '\');';
-                }
-                $this->up[] = '$this->renameColumn(\'' . $model->tableName() . '\', \'' . $attribute
-                    . '\', \'' . $i18nName . '\');';
-                $this->down[] = '$this->renameColumn(\'' . $model->tableName() . '\', \''
-                    . $i18nName . '\', \'' . $attribute . '\');';
-                // Add fks again after rename
-                if (!is_null($attributeFk)) {
-                    $this->up[] = '$this->addForeignKey(\'' . $attributeFk["CONSTRAINT_NAME"]
-                        . '\', \'' . $model->tableName()
-                        . '\', \'' . $i18nName
-                        . '\', \'' . $model->metaData->tableSchema->foreignKeys[$attribute][0]
-                        . '\', \'' . $model->metaData->tableSchema->foreignKeys[$attribute][1]
-                        . '\', \'' . $attributeFk["rules"]["DELETE_RULE"]
-                        . '\', \'' . $attributeFk["rules"]["UPDATE_RULE"] . '\');';
-                    $this->down[] = '$this->addForeignKey(\'' . $attributeFk["CONSTRAINT_NAME"]
-                        . '\', \'' . $model->tableName()
-                        . '\', \'' . $attribute
-                        . '\', \'' . $model->metaData->tableSchema->foreignKeys[$attribute][0]
-                        . '\', \'' . $model->metaData->tableSchema->foreignKeys[$attribute][1]
-                        . '\', \'' . $attributeFk["rules"]["DELETE_RULE"]
-                        . '\', \'' . $attributeFk["rules"]["UPDATE_RULE"] . '\');';
-                }
-            } else {
-                $this->up[] = '$this->addColumn(\'' . $model->tableName() . '\', \'' . $i18nName
-                    . '\', \'' . $this->_getColumnDbType($model, $attribute) . '\');';
-                // Replicate out-going foreign keys
-                if (!is_null($attributeFk)) {
-                    $this->up[] = '$this->addForeignKey(\'' . $attributeFk["CONSTRAINT_NAME"] . '_' . $lang
-                        . '\', \'' . $model->tableName()
-                        . '\', \'' . $i18nName
-                        . '\', \'' . $model->metaData->tableSchema->foreignKeys[$attribute][0]
-                        . '\', \'' . $model->metaData->tableSchema->foreignKeys[$attribute][1] . '\');';
-                    $this->down[] = '$this->dropForeignKey(\'' . $attributeFk["CONSTRAINT_NAME"] . '_' . $lang
-                        . '\', \'' . $model->tableName() . '\');';
-                }
-                $this->down[] = '$this->dropColumn(\'' . $model->tableName() . '\', \''
-                    . $i18nName . '\');';
-            }
-        }
-    }
-
-    /**
-     *
-     * @param $langcode
-     */
-    public function actionRemoveUnusedLanguage($lang, $verbose = false)
-    {
-        $this->_verbose = $verbose;
-        $this->load();
-
-        if ($lang == $this->sourceLanguage) {
-            throw new CException("The source language cannot be removed");
-        }
-
-        if (in_array($lang, $this->languages)) {
-            throw new CException("The selected language is currently in use and thus cannot be removed");
-        }
-
-        $this->d("Creating the migration...\n");
-        foreach ($this->models as $modelName => $model) {
-            $this->d("\t...$modelName: \n");
-            $behaviors = $model->behaviors();
-            foreach ($behaviors['i18n-columns']['translationAttributes'] as $attribute) {
-                $this->d("\t\t$lang: ");
-                $this->_removeUnusedLanguageAttribute($lang, $model, $attribute);
-                $this->d("\n");
-            }
-        }
-
-        $this->_createMigrationFile();
-
-    }
-
-    /**
-     * @param $lang
-     * @param $model
-     */
-    protected function _removeUnusedLanguageAttribute($lang, $model, $attribute)
-    {
-        $i18nName = $attribute . '_' . $lang;
-
-        $this->d("\t$i18nName ($attribute)\n");
-
-        if (isset($model->metaData->columns[$i18nName])) {
-
-            // Foreign key checks
-            $attributeFk = $this->attributeFk($model, $i18nName);
-
-            $this->down[] = '$this->addColumn(\'' . $model->tableName() . '\', \'' . $i18nName
-                . '\', \'' . $this->_getColumnDbType($model, $i18nName) . '\');';
-            // Replicate out-going foreign keys
-            if (!is_null($attributeFk)) {
-                $this->down[] = '$this->addForeignKey(\'' . $attributeFk["CONSTRAINT_NAME"]
-                    . '\', \'' . $model->tableName()
-                    . '\', \'' . $i18nName
-                    . '\', \'' . $model->metaData->tableSchema->foreignKeys[$i18nName][0]
-                    . '\', \'' . $model->metaData->tableSchema->foreignKeys[$i18nName][1] . '\');';
-                $this->up[] = '$this->dropForeignKey(\'' . $attributeFk["CONSTRAINT_NAME"]
+            // Remove fks before rename
+            if (!is_null($fromFk)) {
+                $this->up[] = $this->down[] = '$this->dropForeignKey(\'' . $fromFk["CONSTRAINT_NAME"]
                     . '\', \'' . $model->tableName() . '\');';
             }
-            $this->up[] = '$this->dropColumn(\'' . $model->tableName() . '\', \''
-                . $i18nName . '\');';
-
+            $this->up[] = '$this->renameColumn(\'' . $model->tableName() . '\', \'' . $from
+                . '\', \'' . $to . '\');';
+            $this->down[] = '$this->renameColumn(\'' . $model->tableName() . '\', \''
+                . $to . '\', \'' . $from . '\');';
+            // Add fks again after rename
+            if (!is_null($fromFk)) {
+                $this->up[] = '$this->addForeignKey(\'' . $fromFk["CONSTRAINT_NAME"]
+                    . '\', \'' . $model->tableName()
+                    . '\', \'' . $to
+                    . '\', \'' . $model->metaData->tableSchema->foreignKeys[$from][0]
+                    . '\', \'' . $model->metaData->tableSchema->foreignKeys[$from][1]
+                    . '\', \'' . $fromFk["rules"]["DELETE_RULE"]
+                    . '\', \'' . $fromFk["rules"]["UPDATE_RULE"] . '\');';
+                $this->down[] = '$this->addForeignKey(\'' . $fromFk["CONSTRAINT_NAME"]
+                    . '\', \'' . $model->tableName()
+                    . '\', \'' . $from
+                    . '\', \'' . $model->metaData->tableSchema->foreignKeys[$from][0]
+                    . '\', \'' . $model->metaData->tableSchema->foreignKeys[$from][1]
+                    . '\', \'' . $fromFk["rules"]["DELETE_RULE"]
+                    . '\', \'' . $fromFk["rules"]["UPDATE_RULE"] . '\');';
+            }
         }
     }
 
@@ -308,35 +207,6 @@ class I18nAttributeMessagesCommand extends CConsoleCommand
 
         }
         return $attributeFk;
-    }
-
-    /**
-     * Load languages from main config.
-     *
-     * @access protected
-     */
-    protected function _loadLanguages()
-    {
-        // Load main.php config file
-        $file = realpath(Yii::app()->basePath) . '/config/main.php';
-        if (!file_exists($file)) {
-            print("Config not found\n");
-            exit("Error loading config file $file.\n");
-        } else {
-            $config = require($file);
-            $this->d("Config loaded\n");
-        }
-
-        if (!isset($config['components']['langHandler']['languages'])) {
-            exit("Your Yii application has no configured languages.\n");
-        }
-
-        if (!isset($config['language'])) {
-            exit("Please, define a default language in the config file.\n");
-        }
-
-        $this->languages = $config['components']['langHandler']['languages'];
-        $this->sourceLanguage = $config['language'];
     }
 
     /**
