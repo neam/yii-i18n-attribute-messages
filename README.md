@@ -17,6 +17,11 @@ Features
  * Console command automatically creates migrations for the necessary database changes
  * The source message is left in the model for Gii compatibility (generated models will have the correct validation rules and field order for the translated attributes)
  * Rigorous unit tests
+ * Use with any number of attributes/languages without worrying about database restrictions on row size and/or column counts being exceeded
+
+Limitations
+-------------
+Not ideal for translated attributes that are supposed to be native in the active records' database tables, such as translated foreign keys, or multilingual look-up/search columns. Use [https://github.com/neam/yii-i18n-columns](https://github.com/neam/yii-i18n-columns) for those attributes instead.
 
 Requirements
 ------------------
