@@ -34,31 +34,34 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
             return parent::__get($name);
         }
 
-        // Without suffix
         if (in_array($name, $this->translationAttributes)) {
-
+            // Without suffix
             $lang = Yii::app()->language;
-            if (isset($this->dirtyAttributes[$name . '_' . $lang])) {
-                return $this->dirtyAttributes[$name . '_' . $lang];
-            }
-
-            $sourceMessageAttribute = "_" . $name;
-            $sourceMessageContent = $this->owner->attributes[$sourceMessageAttribute];
-            return Yii::t('attributes', $sourceMessageContent);
-        }
-
-        // With suffix
-        $originalAttribute = $this->getOriginalAttribute($name);
-        if (in_array($originalAttribute, $this->translationAttributes)) {
-
-            if (isset($this->dirtyAttributes[$name])) {
-                return $this->dirtyAttributes[$name];
-            }
-
-            $sourceMessageAttribute = "_" . $originalAttribute;
-            $sourceMessageContent = $this->owner->$sourceMessageAttribute;
+            $withoutSuffix = $name;
+        } else {
+            // With suffix
             $lang = $this->getLanguageSuffix($name);
-            return Yii::t('attributes', $sourceMessageContent, array(), null, $lang);
+            $withoutSuffix = $this->getOriginalAttribute($name);
+        }
+        $withSuffix = $withoutSuffix . '_' . $lang;
+
+        if (in_array($withoutSuffix, $this->translationAttributes)) {
+
+            if (isset($this->dirtyAttributes[$withSuffix])) {
+                return $this->dirtyAttributes[$withSuffix];
+            }
+
+            if ($lang == Yii::app()->sourceLanguage) {
+                $sourceMessageAttribute = "_" . $withoutSuffix;
+                $sourceMessageContent = $this->owner->attributes[$sourceMessageAttribute];
+                return $sourceMessageContent;
+            }
+
+            if (is_null($this->getSourceMessage($withoutSuffix))) {
+                return null;
+            }
+
+            return Yii::t($this->getCategory($withoutSuffix), $this->getSourceMessage($withoutSuffix), array(), $this->messageSourceComponent, $lang);
         }
 
     }
@@ -150,6 +153,16 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     {
         $langsuffix = $this->getLanguageSuffix($name);
         return substr($name, 0, -strlen($langsuffix) - 1);
+    }
+
+    public function getCategory($name)
+    {
+        return 'attributes.' . get_class($this->owner) . '.' . $name;
+    }
+
+    public function getSourceMessage($name)
+    {
+        return $this->owner->primaryKey;
     }
 
     /**
