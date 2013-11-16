@@ -124,7 +124,7 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertEquals($book->title, $book->title_en);
 
         Yii::app()->language = 'en_us';
-        $book->title_en = 'test';
+        $book->title_en_us = 'test';
         $this->assertEquals('test', $book->title_en_us);
         $this->assertEquals($book->title, $book->title_en_us);
 
