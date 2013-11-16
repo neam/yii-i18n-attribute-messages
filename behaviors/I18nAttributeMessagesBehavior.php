@@ -20,6 +20,12 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
      */
     public $languageSuffixes = array();
 
+    /**
+     * @var string the message source component to be used with this behavior instance
+     */
+    public $messageSourceComponent = "messages";
+
+    /**
      * @var array list of attributes that are set, but yet to be saved
      */
     private $dirtyAttributes = array();
@@ -186,6 +192,56 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         }
     }
 
+    public function afterSave()
+    {
+
+        // do nothing if we have nothing to save
+        if (empty($this->dirtyAttributes)) {
+            return true;
+        }
+
+        // format into a structured array of translations to save
+        $sourceMessages = array();
+        foreach ($this->dirtyAttributes as $keyWithSuffix => $value) {
+
+            $originalAttribute = $this->getOriginalAttribute($keyWithSuffix);
+            $language = $this->getLanguageSuffix($keyWithSuffix);
+
+            // Do not save translations in sourceLanguage
+            if ($language != Yii::app()->sourceLanguage) {
+                continue;
+            }
+
+            $sourceMessage = $this->getSourceMessage($originalAttribute);
+            if (!isset($sourceMessages[$sourceMessage])) {
+                $sourceMessages[$sourceMessage] = array('category' => $this->getCategory($originalAttribute), 'translations' => array());
+            }
+
+            $sourceMessages[$sourceMessage]['translations'][] = array('language' => $language, 'message' => $value);
+        }
+
+        // do nothing if we have nothing to save
+        if (empty($sourceMessages)) {
+            return true;
+        }
+
+        // find a suitable method of saving
+        $component = Yii::app()->{$this->messageSourceComponent};
+        if (method_exists($component, 'saveTranslations')) {
+
+            $component->saveTranslations($sourceMessages);
+
+            // clear the dirty attributes that have now been saved
+            $this->dirtyAttributes = array();
+
+            return true;
+        }
+        if ($component instanceof CPhpMessageSource) {
+            throw new CException("Cannot save translations with CPhpMessageSource");
+        }
+        throw new CException("Cannot save translations with " . get_class(Yii::app()->messages));
+
+    }
 
     /**
      * Expose the behavior
