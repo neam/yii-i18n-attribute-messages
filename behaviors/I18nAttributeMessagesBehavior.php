@@ -241,10 +241,7 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 
             $component->saveTranslations($sourceMessages);
 
-            // clear the dirty attributes that have now been saved
-            $this->dirtyAttributes = array();
-
-            return true;
+            return $this->afterSavingTranslations();
         }
         if ($component instanceof CPhpMessageSource) {
             throw new CException("Cannot save translations with CPhpMessageSource");
@@ -268,7 +265,8 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
                         if (($messageModel = Message::model()->find('id=:id AND language=:language', $attributes)) === null) {
                             $messageModel = new Message;
                         }
-                        $messageModel->attributes = $attributes;
+                        $messageModel->id = $attributes['id'];
+                        $messageModel->language = $attributes['language'];
                         $messageModel->translation = $translation['translation'];
                         if (!$messageModel->save()) {
                             throw new CException('Attribute message ' . $attributes['category'] . ' - ' . $attributes['message'] . ' - ' . $language . ' - ' . $value . ' could not be saved to the Message table. Errors: ' . print_r($messageModel->errors, true));
@@ -276,17 +274,25 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
                     }
                 }
 
-                // clear the dirty attributes that have now been saved
-                $this->dirtyAttributes = array();
-
-                return true;
-
             }
+
+            return $this->afterSavingTranslations();
 
         }
 
         throw new CException("Cannot save translations with " . get_class(Yii::app()->messages));
 
+    }
+
+    protected function afterSavingTranslations()
+    {
+        // Clear the dirty attributes that have now been saved
+        $this->dirtyAttributes = array();
+
+        // We need to reset the messages component to prevent stale data on next usage
+        Yii::app()->setComponent($this->messageSourceComponent, null);
+
+        return true;
     }
 
     /**

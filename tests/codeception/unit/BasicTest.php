@@ -247,10 +247,11 @@ class BasicTest extends \Codeception\TestCase\Test
     /**
      * @test
      */
-    public function saveMultiple()
+    public function updateExisting()
     {
 
-        $book = Book::model()->findByPk(1);
+        $books = Book::model()->findAll();
+        $book = $books[0];
 
         $this->assertEquals(1, count($book));
 
@@ -258,6 +259,7 @@ class BasicTest extends \Codeception\TestCase\Test
 
         $book->title = 'O Diabo Veste Prada';
         $book->title_en = 'The Devil Wears Prada';
+        $book->title_en_us = 'The Devil Wears Prada';
         $book->title_sv = 'Djävulen bär Prada';
 
         $saveResult = $book->save();
@@ -266,9 +268,13 @@ class BasicTest extends \Codeception\TestCase\Test
 
         $this->assertEquals($book->title_pt, 'O Diabo Veste Prada');
         $this->assertEquals($book->title_sv, 'Djävulen bär Prada');
+        $this->assertEquals($book->title_en_us, 'The Devil Wears Prada');
         $this->assertEquals($book->title_en, 'The Devil Wears Prada');
 
-        $book = Book::model()->findByPk(1);
+        $books = Book::model()->findAll();
+        $book = $books[0];
+
+        $this->assertEquals(1, count($book));
 
         Yii::app()->language = 'en_us';
 
@@ -276,6 +282,14 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertEquals($book->title_sv, 'Djävulen bär Prada');
         $this->assertEquals($book->title_en, 'The Devil Wears Prada');
         $this->assertEquals($book->title, 'The Devil Wears Prada');
+
+        Yii::app()->language = 'de';
+
+        $this->assertEquals($book->title_pt, 'O Diabo Veste Prada');
+        $this->assertEquals($book->title_sv, 'Djävulen bär Prada');
+        $this->assertEquals($book->title_en, 'The Devil Wears Prada');
+        $this->assertEquals($book->title, 'Der Alchimist');
+
     }
 
 }
