@@ -40,17 +40,6 @@ return array(
 			// enable cookie-based authentication
 			'allowAutoLogin'=>true,
 		),
-        'langHandler'=>array(
-            'languages'=>array(
-                'en',
-                'es',
-                'fa',
-                'hi',
-                'pt',
-                'sv',
-                'de',
-            )
-        ),
 		// uncomment the following to enable URLs in path-format
 		/*
 		'urlManager'=>array(
