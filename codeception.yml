@@ -15,4 +15,6 @@ modules:
             dsn: 'mysql:host=127.0.0.1;dbname=yiam_test'
             user: 'yiam_test'
             password: 'yiam_test'
-            #dump: tests/db/modified.sql
+            dump: tests/db/modified.sql
+            populate: true
+            cleanup: false

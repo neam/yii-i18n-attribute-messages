@@ -25,6 +25,7 @@ class BasicTest extends \Codeception\TestCase\Test
 
     protected function cleanTestDb()
     {
+        return; // Using Codeception Db Module dump features instead
         Yii::app()->db->createCommand("DELETE FROM book")->execute();
         Yii::app()->db->createCommand("DELETE FROM chapter")->execute();
         Yii::app()->db->createCommand("DELETE FROM image")->execute();
