@@ -33,6 +33,13 @@ class Chapter extends CActiveRecord
                         'slug',
                         'book_id',
                     ),
+                    'languageSuffixes' => array(
+                        'en',
+                        'en_us',
+                        'sv',
+                        'de',
+                        'ch',
+                    ),
                 ),
             )
         );

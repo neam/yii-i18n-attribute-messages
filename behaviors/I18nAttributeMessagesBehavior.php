@@ -171,14 +171,18 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         return substr($name, 0, -strlen($langsuffix) - 1);
     }
 
-    public function getCategory($name)
+    public function getCategory($originalAttribute)
     {
-        return 'attributes.' . get_class($this->owner) . '.' . $name;
+        return 'attributes-' . get_class($this->owner) . '-' . $originalAttribute;
     }
 
-    public function getSourceMessage($name)
+    public function getSourceMessage($originalAttribute)
     {
+        /*
         return $this->owner->primaryKey;
+        */
+        $sourceLanguageAttribute = '_' . $originalAttribute;
+        return $this->owner->$sourceLanguageAttribute;
     }
 
     /**
@@ -202,7 +206,7 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         }
     }
 
-    public function afterSave()
+    public function afterSave($event)
     {
 
         // do nothing if we have nothing to save

@@ -96,19 +96,19 @@ class BasicTest extends \Codeception\TestCase\Test
         $book = new Book;
 
         Yii::app()->language = 'en';
-        $book->title = 'test';
-        $this->assertEquals('test', $book->title);
+        $book->title = 'test en';
+        $this->assertEquals('test en', $book->title);
         $this->assertEquals($book->title, $book->title_en);
 
         Yii::app()->language = 'en_us';
-        $book->title = 'test';
-        $this->assertEquals('test', $book->title);
+        $book->title = 'test en_us';
+        $this->assertEquals('test en_us', $book->title);
         $this->assertEquals($book->title, $book->title_en_us);
 
         Yii::app()->language = 'sv';
-        $this->assertNotEquals($book->title, $book->title_en);
-        $this->assertNotEquals($book->title, $book->title_en_us);
         $this->assertEquals($book->title, $book->title_sv);
+        $this->assertEquals($book->title, $book->title_en_us); // Equals because of fallback
+        $this->assertNotEquals($book->title, $book->title_en); // Equals because of fallback
     }
 
     /**
@@ -130,14 +130,15 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertEquals($book->title, $book->title_en_us);
 
         Yii::app()->language = 'sv';
-        $this->assertNotEquals($book->title, $book->title_en);
         $this->assertEquals($book->title, $book->title_sv);
+
+        $this->assertEquals($book->title, $book->title_en); // Equals because of fallback
     }
 
     /**
      * @test
      */
-    public function saveSingleWithoutSuffix()
+    public function saveSingleWithSourceMessage()
     {
 
         $image = new Image;
@@ -150,6 +151,9 @@ class BasicTest extends \Codeception\TestCase\Test
         $book->id = 1;
         $book->image_id = $image->id;
 
+        Yii::app()->language = Yii::app()->sourceLanguage;
+        $book->title = 'The Alchemist';
+
         Yii::app()->language = 'sv';
         $book->title = 'Alkemisten';
         $saveResult = $book->save();
@@ -158,8 +162,8 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertTrue($saveResult);
 
         $this->assertEquals($book->title, $book->title_sv);
-        $this->assertEquals($book->title, 'Alkemisten');
-        $this->assertEquals($book->title_sv, 'Alkemisten');
+        $this->assertEquals('Alkemisten', $book->title);
+        $this->assertEquals('Alkemisten', $book->title_sv);
 
         Yii::app()->language = 'en';
         $book->title = 'The Alchemist';
@@ -168,8 +172,8 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertTrue($saveResult);
 
         $this->assertEquals($book->title, $book->title_en);
-        $this->assertEquals($book->title, 'The Alchemist');
-        $this->assertEquals($book->title_en, 'The Alchemist');
+        $this->assertEquals('The Alchemist', $book->title);
+        $this->assertEquals('The Alchemist', $book->title_en);
 
         Yii::app()->language = 'de';
         $book->title = 'Der Alchimist';
@@ -178,40 +182,113 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertTrue($saveResult);
 
         $this->assertEquals($book->title, $book->title_de);
-        $this->assertEquals($book->title, 'Der Alchimist');
-        $this->assertEquals($book->title_de, 'Der Alchimist');
-        $this->assertEquals($book->title_en, 'The Alchemist');
-
-        Yii::app()->language = 'en_us';
-        $book->title = 'The Alchemist';
-        $saveResult = $book->save();
-
-        $this->assertTrue($saveResult);
-
-        $this->assertEquals($book->title, $book->title_en_us);
-        $this->assertEquals($book->title, 'The Alchemist');
-        $this->assertEquals($book->title_en_us, 'The Alchemist');
-
-        $books = Book::model()->findAll();
-        $this->assertEquals(1, count($books));
+        $this->assertEquals('Der Alchimist', $book->title);
+        $this->assertEquals('Der Alchimist', $book->title_de);
+        $this->assertEquals('The Alchemist', $book->title_en);
 
         // Refresh from db
         $book->refresh();
 
         Yii::app()->language = 'sv';
         $this->assertEquals($book->title, $book->title_sv);
-        $this->assertEquals($book->title, 'Alkemisten');
-        $this->assertEquals($book->title_sv, 'Alkemisten');
+        $this->assertEquals('Alkemisten', $book->title);
+        $this->assertEquals('Alkemisten', $book->title_sv);
 
         Yii::app()->language = 'en';
         $this->assertEquals($book->title, $book->title_en);
-        $this->assertEquals($book->title, 'The Alchemist');
-        $this->assertEquals($book->title_en, 'The Alchemist');
+        $this->assertEquals('The Alchemist', $book->title);
+        $this->assertEquals('The Alchemist', $book->title_en);
 
         Yii::app()->language = 'en_us';
         $this->assertEquals($book->title, $book->title_en_us);
-        $this->assertEquals($book->title, 'The Alchemist');
-        $this->assertEquals($book->title_en_us, 'The Alchemist');
+        $this->assertEquals('The Alchemist', $book->title);
+        $this->assertEquals('The Alchemist', $book->title_en_us);
+
+        Yii::app()->language = 'en_us';
+        $book->title = 'The Alchemist and the Frog';
+        $saveResult = $book->save();
+
+        $this->assertTrue($saveResult);
+
+        $this->assertEquals($book->title, $book->title_en_us);
+        $this->assertEquals('The Alchemist and the Frog', $book->title);
+        $this->assertEquals('The Alchemist and the Frog', $book->title_en_us);
+        $this->assertEquals('The Alchemist and the Frog', $book->title_sv); // Equals because of fallback - above translations are no longer valid after the source message changes
+        $this->assertEquals('The Alchemist and the Frog', $book->title_de); // Equals because of fallback - above translations are no longer valid after the source message changes
+        $this->assertEquals('The Alchemist and the Frog', $book->title_ch); // Equals because of fallback - above translations are no longer valid after the source message changes
+
+        $books = Book::model()->findAll();
+        $this->assertEquals(1, count($books));
+
+    }
+
+    /**
+     * @test
+     */
+    public function saveSingleWithoutSourceMessage()
+    {
+
+        $image = new Image;
+        $saveResult = $image->save();
+
+        $this->assertEmpty($image->errors);
+        $this->assertTrue($saveResult);
+
+        $book = new Book;
+        $book->id = 2;
+        $book->image_id = $image->id;
+
+        Yii::app()->language = 'sv';
+        $book->title = 'Alkemisten';
+        $saveResult = $book->save();
+
+        $this->assertEmpty($book->errors);
+        $this->assertTrue($saveResult);
+
+        $this->assertEquals($book->title, $book->title_sv);
+        $this->assertEquals($book->title_en_us, $book->title); // Equals because of fallback
+        $this->assertEquals($book->title_en_us, $book->title_sv); // Equals because of fallback
+
+        Yii::app()->language = 'en';
+        $book->title = 'The Alchemist';
+        $saveResult = $book->save();
+
+        $this->assertTrue($saveResult);
+
+        $this->assertEquals($book->title, $book->title_en);
+        $this->assertEquals($book->title_en_us, $book->title); // Equals because of fallback
+        $this->assertEquals($book->title_en_us, $book->title_en); // Equals because of fallback
+
+        Yii::app()->language = 'de';
+        $book->title = 'Der Alchimist';
+        $saveResult = $book->save();
+
+        $this->assertTrue($saveResult);
+
+        $this->assertEquals($book->title, $book->title_de);
+        $this->assertEquals($book->title_en_us, $book->title); // Equals because of fallback
+        $this->assertEquals($book->title_en_us, $book->title_de); // Equals because of fallback
+
+        $books = Book::model()->findAll();
+        $this->assertEquals(2, count($books));
+
+        // Refresh from db
+        $book->refresh();
+
+        Yii::app()->language = 'sv';
+        $this->assertEquals($book->title, $book->title_sv);
+        $this->assertEquals($book->title_en_us, $book->title);
+        $this->assertEquals($book->title_en_us, $book->title_sv);
+
+        Yii::app()->language = 'en';
+        $this->assertEquals($book->title, $book->title_en);
+        $this->assertEquals($book->title_en_us, $book->title);
+        $this->assertEquals($book->title_en_us, $book->title_en);
+
+        Yii::app()->language = 'en_us';
+        $this->assertEquals($book->title, $book->title_en_us);
+        $this->assertEquals(null, $book->title);
+        $this->assertEquals(null, $book->title_en_us);
 
     }
 
@@ -226,22 +303,46 @@ class BasicTest extends \Codeception\TestCase\Test
 
         Yii::app()->language = 'en';
 
-        $this->assertEquals($book->title, 'The Alchemist');
-        $this->assertEquals($book->title_en, 'The Alchemist');
-        $this->assertEquals($book->title_en_us, 'The Alchemist');
+        $this->assertEquals('The Alchemist and the Frog', $book->title);
+        $this->assertEquals('The Alchemist and the Frog', $book->title_en);
+        $this->assertEquals('The Alchemist and the Frog', $book->title_sv);
+        $this->assertEquals('The Alchemist and the Frog', $book->title_en_us);
+
+    }
+
+    /**
+     * @test
+     */
+    public function reusePreviousTranslation()
+    {
+
+        $books = Book::model()->findAll();
+        $book = $books[0];
 
         Yii::app()->language = 'en_us';
+        $book->title = 'The Alchemist';
+        $saveResult = $book->save();
 
-        $this->assertEquals($book->title, 'The Alchemist');
-        $this->assertEquals($book->title_sv, 'Alkemisten');
-        $this->assertEquals($book->title_en_us, 'The Alchemist');
+        $this->assertTrue($saveResult);
+
+        Yii::app()->language = 'en';
+
+        $this->assertEquals('The Alchemist', $book->title);
+        $this->assertEquals('The Alchemist', $book->title_en);
+        $this->assertEquals('The Alchemist', $book->title_en_us);
+
+        Yii::app()->language = 'de';
+
+        $this->assertEquals('Der Alchimist', $book->title);
+        $this->assertEquals('Der Alchimist', $book->title_de);
+        $this->assertEquals('The Alchemist', $book->title_en_us);
 
         Yii::app()->language = 'sv';
 
-        $this->assertEquals($book->title, 'Alkemisten');
-        $this->assertEquals($book->title_sv, 'Alkemisten');
-        $this->assertEquals($book->title_en, 'The Alchemist');
-        $this->assertEquals($book->title_en_us, 'The Alchemist');
+        $this->assertEquals('Alkemisten', $book->title);
+        $this->assertEquals('Alkemisten', $book->title_sv);
+        $this->assertEquals('The Alchemist', $book->title_en_us);
+
     }
 
     /**
@@ -253,42 +354,96 @@ class BasicTest extends \Codeception\TestCase\Test
         $books = Book::model()->findAll();
         $book = $books[0];
 
-        $this->assertEquals(1, count($book));
+        $this->assertEquals(2, count($books));
 
         Yii::app()->language = 'pt';
 
+        $book->title_en_us = 'The Devil Wears Prada';
         $book->title = 'O Diabo Veste Prada';
         $book->title_en = 'The Devil Wears Prada';
-        $book->title_en_us = 'The Devil Wears Prada';
         $book->title_sv = 'Djävulen bär Prada';
 
         $saveResult = $book->save();
 
         $this->assertTrue($saveResult);
 
-        $this->assertEquals($book->title_pt, 'O Diabo Veste Prada');
-        $this->assertEquals($book->title_sv, 'Djävulen bär Prada');
-        $this->assertEquals($book->title_en_us, 'The Devil Wears Prada');
-        $this->assertEquals($book->title_en, 'The Devil Wears Prada');
+        $this->assertEquals('O Diabo Veste Prada', $book->title_pt);
+        $this->assertEquals('Djävulen bär Prada', $book->title_sv);
+        $this->assertEquals('The Devil Wears Prada', $book->title_en_us);
+        $this->assertEquals('The Devil Wears Prada', $book->title_en);
 
         $books = Book::model()->findAll();
         $book = $books[0];
 
-        $this->assertEquals(1, count($book));
+        $this->assertEquals(2, count($books));
 
         Yii::app()->language = 'en_us';
 
-        $this->assertEquals($book->title_pt, 'O Diabo Veste Prada');
-        $this->assertEquals($book->title_sv, 'Djävulen bär Prada');
-        $this->assertEquals($book->title_en, 'The Devil Wears Prada');
-        $this->assertEquals($book->title, 'The Devil Wears Prada');
+        $this->assertEquals('O Diabo Veste Prada', $book->title_pt);
+        $this->assertEquals('Djävulen bär Prada', $book->title_sv);
+        $this->assertEquals('The Devil Wears Prada', $book->title_en_us);
+        $this->assertEquals('The Devil Wears Prada', $book->title_en);
 
         Yii::app()->language = 'de';
 
+        $this->assertEquals('O Diabo Veste Prada', $book->title_pt);
+        $this->assertEquals('Djävulen bär Prada', $book->title_sv);
+        $this->assertEquals('The Devil Wears Prada', $book->title_en_us);
+        $this->assertEquals($book->title_en_us, $book->title);
+
+    }
+
+    /**
+     * Note: This test assumes default Yii::t() fallback behavior
+     * @test
+     */
+    public function furtherFallbackBehaviorTests()
+    {
+
+        $books = Book::model()->findAll();
+        $book = $books[0];
+
+        $this->assertEquals(2, count($books));
+
+        $fooText = "Lean on me";
+
+        Yii::app()->language = Yii::app()->sourceLanguage;
+        $this->assertEquals($fooText, Yii::t('app', $fooText));
+
+        Yii::app()->language = 'ch';
+        $this->assertEquals($fooText, Yii::t('app', $fooText));
+
+        $chapter = new Chapter();
+        $chapter->_book_id = $book->id;
+        $chapter->_title = $fooText;
+
+        Yii::app()->language = 'en_us';
+        $this->assertEquals($fooText, $chapter->title);
+
+        Yii::app()->language = 'de';
+        $this->assertEquals($fooText, $chapter->title);
+
+        $saveResult = $chapter->save();
+
+        $this->assertTrue($saveResult);
+
+        $chapters = Chapter::model()->findAll();
+        $chapter = $chapters[0];
+
+        $this->assertEquals(1, count($chapters));
+
+        $this->assertEquals($fooText, $chapter->title);
+        $this->assertEquals($fooText, $chapter->title_de);
+        $this->assertEquals($fooText, $chapter->title_ch);
+
+        Yii::app()->language = 'ch';
+
+        $this->assertEquals($book->title_en_us, $book->title_ch);
+
         $this->assertEquals($book->title_pt, 'O Diabo Veste Prada');
         $this->assertEquals($book->title_sv, 'Djävulen bär Prada');
+        $this->assertEquals($book->title_en_us, 'The Devil Wears Prada');
         $this->assertEquals($book->title_en, 'The Devil Wears Prada');
-        $this->assertEquals($book->title, 'Der Alchimist');
 
     }
 
