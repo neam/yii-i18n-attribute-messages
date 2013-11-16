@@ -1,16 +1,20 @@
 Yii Extension: I18nAttributeMessages
 ==========================
 
-Transparent attribute translation for ActiveRecords, leveraging Yii's built-in translation features for translated field contents
+Transparent attribute translation for ActiveRecords, leveraging Yii's built-in translation features to retrieve translated attribute contents.
+
+In it's essence, it turns `$book->title` into `Yii:t('attributes.Book.title', $book->primaryKey)` and `$book->title_de` into `Yii:t('attributes.Book.title', $book->primaryKey, array(), null, 'de')` while
+providing a way to save translations simply by assigning and saving these attributes in the model (Note: CDbMessageSource only).
+The source message is left in the model for Gii compatibility (generated models will have the correct validation rules and field order) as `$book->_title`, and is used to store the content's of the attribute in the application's source language.
 
 Features
 --------
 
- * Eases the creation of multilingual ActiveRecords in a project
- * Automatically loads the application language by default
- * Translations are stored directly in the model using separate columns for each language
+ * Eases the translation of user-generated content in a project
+ * Eases the creation of UI for translators to perform translation work
+ * Works with any Yii-compatible message source
+ * Write-ability when using CDbMessageSource
  * Console command automatically creates migrations for the necessary database changes
- * Leverages Gii code generation to provide CRUD for translation work
 
 Requirements
 ------------------
@@ -33,13 +37,13 @@ Ensure that you have the following in your composer.json:
         ...
     ],
     "require":{
-        "neam/yii-i18n-attribute-messages":"@dev",
+        "neam/yii-i18n-attribute-messages":"dev-master",
         ...
     },
 
 Then install through composer:
 
-    php composer.php install neam/yii-i18n-attribute-messages
+    php composer.phar update neam/yii-i18n-attribute-messages
 
 If you don't use composer, clone or download this project into /path/to/your/app/vendor/neam/yii-i18n-attribute-messages
 
@@ -84,8 +88,8 @@ If you don't use composer, clone or download this project into /path/to/your/app
                  'translationAttributes' => array(
                       'title',
                       'slug',
-                      'image_id',
-                      'etc',
+                      'book_id',
+                      //'etc',
                  ),
             ),
         );
@@ -93,15 +97,13 @@ If you don't use composer, clone or download this project into /path/to/your/app
 
 #### 2. Create migration from command line:
 
-`./yiic i18n-attribute-messages process`
-
-Prior to this, you should already have configured a default language (`$config['language']`) and available languages (`$config['components']['langHandler']['languages']`) for your app.
+    ./yiic i18n-attribute-messages process
 
 Run with `--verbose` to see more detailed output.
 
 #### 3. Apply the generated migration:
 
-`./yiic migrate`
+    ./yiic migrate
 
 This will rename the fields that are defined in translationAttributes to _fieldname, which will be the placed that the source content is stored (the content that is to be translated).
 
@@ -157,7 +159,7 @@ All translations will be available through attribute suffix, ie `$book->title_en
 
      Yii::app()->language = 'sv';
      $book->title = 'Djävulen bär Prada';
-     $book->save(); // Saves 'Djävulen bär Prada' to Book.title_sv
+     $book->save(); // Saves 'Djävulen bär Prada' as if it was assigned to Book.title_sv
 
 ### Saving multiple translations
 
@@ -167,14 +169,18 @@ All translations will be available through attribute suffix, ie `$book->title_en
 
 ### More examples
 
-...can be found in tests/unit/I18nAttributeMessagesTest.php
+...can be found in tests/codeception/unit/BasicTest.php
 
 Changelog
 ---------
 
 ### 0.1.0
 
--
+- Eases the translation of user-generated content in a project
+- Eases the creation of UI for translators to perform translation work
+- Works with any Yii-compatible message source
+- Write-ability when using CDbMessageSource
+- Console command automatically creates migrations for the necessary database changes
 
 ### 0.0.0
 
@@ -185,7 +191,7 @@ Testing the extension
 
 ### One-time preparations
 
-Make sure to be in the extension's root directory
+Switch to the extension's root directory
 
     cd vendor/neam/yii-i18n-attribute-messages
 
@@ -193,25 +199,45 @@ Create a database called yiam_test in your local mysql server installation. Crea
 
 After this, you can run the following routine to test the extension:
 
-### 1. Set-up the test database
+### Test the command
+
+#### 1. Set-up the test database
 
 Load tests/db/unmodified.sql into the database.
 
-### 2. Run the console command
+#### 2. Run the console command
 
     tests/app/protected/yiic i18n-attribute-messages process
 
-### 3. Apply the migration
+#### 3. Apply the migration
 
     tests/app/protected/yiic migrate
 
-### 4. Test the behavior
-
-Edit tests/codeception/acceptance.suite.yml
-Or start the PHP built-in webserver (only available from PHP 5.4):
-
-    php -S localhost:31415 -t app/ &
+### Test the behavior
 
 Run the unit tests
 
-    php codecept.phar run
+    php codecept.phar run unit
+
+You should get output similar to:
+
+    Codeception PHP Testing Framework v1.6.2
+    Powered by PHPUnit 3.7.19 by Sebastian Bergmann.
+
+    Suite unit started
+    Trying to ensure empty db (BasicTest::ensureEmptyDb) - Ok
+    Trying to ensure known source language (BasicTest::ensureKnownSourceLanguage) - Ok
+    Trying to see behavior (BasicTest::seeBehavior) - Ok
+    Trying to interpret language suffix (BasicTest::interpretLanguageSuffix) - Ok
+    Trying to get (BasicTest::get) - Ok
+    Trying to set without suffix (BasicTest::setWithoutSuffix) - Ok
+    Trying to set with suffix (BasicTest::setWithSuffix) - Ok
+    Trying to save single without suffix (BasicTest::saveSingleWithoutSuffix) - Ok
+    Trying to fetch single without suffix (BasicTest::fetchSingleWithoutSuffix) - Ok
+    Trying to update existing (BasicTest::updateExisting) - Ok
+    Trying to test test suite (EmptyTest::testTestSuite) - Ok
+
+
+    Time: 0 seconds, Memory: 13.25Mb
+
+    OK (11 tests, 77 assertions)
