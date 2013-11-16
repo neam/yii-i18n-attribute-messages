@@ -3,18 +3,20 @@ Yii Extension: I18nAttributeMessages
 
 Transparent attribute translation for ActiveRecords, leveraging Yii's built-in translation features to retrieve translated attribute contents.
 
-In it's essence, it turns `$book->title` into `Yii:t('attributes.Book.title', $book->primaryKey)` and `$book->title_de` into `Yii:t('attributes.Book.title', $book->primaryKey, array(), null, 'de')` while
-providing a way to save translations simply by assigning and saving these attributes in the model (Note: CDbMessageSource only).
-The source message is left in the model for Gii compatibility (generated models will have the correct validation rules and field order) as `$book->_title`, and is used to store the content's of the attribute in the application's source language.
+All you'll need to do is to rename the fields from `$book->title` to `$book->_title` in your database. The included console command scans your database and configuration and creates a migration for all necessary renames.
+
+The behavior then transparently turns `$book->title` into `Yii:t('attributes.Book.title', $book->_title)` and `$book->title_de` into `Yii:t('attributes.Book.title', $book->_title, array(), null, 'de')`, while providing transparent saving of translations simply by assigning and saving these attributes in the model (Note: CDbMessageSource only).
 
 Features
 --------
 
  * Eases the translation of user-generated content in a project
  * Eases the creation of UI for translators to perform translation work
- * Works with any Yii-compatible message source
- * Write-ability when using CDbMessageSource
+ * Works with any Yii-compatible message source when retrieving translations
+ * Saving of translations when using CDbMessageSource
  * Console command automatically creates migrations for the necessary database changes
+ * The source message is left in the model for Gii compatibility (generated models will have the correct validation rules and field order for the translated attributes)
+ * Rigorous unit tests
 
 Requirements
 ------------------
@@ -135,9 +137,31 @@ Sample migration file:
         }
     }
 
-#### 4. Re-generate models
+#### 4. Add save-support
 
-Use Gii as per the official documentation. After this, you have multilingual Active Records at your disposal :)
+Save-support is only enabled if you use CDbMessageSource. Configure your app to use it and make sure the following tables (Note: with auto-increment for SourceMessage) exists:
+
+    CREATE TABLE `SourceMessage` (
+      `id` INT(11) NOT NULL AUTO_INCREMENT,
+      `category` VARCHAR(32) NULL DEFAULT NULL,
+      `message` TEXT NULL DEFAULT NULL,
+      PRIMARY KEY (`id`))
+    COLLATE = utf8_bin;
+
+    CREATE TABLE `Message` (
+      `id` INT(11) NOT NULL DEFAULT '0',
+      `language` VARCHAR(16) NOT NULL DEFAULT '',
+      `translation` TEXT NULL DEFAULT NULL,
+      PRIMARY KEY (`id`, `language`),
+      CONSTRAINT `FK_Message_SourceMessage`
+        FOREIGN KEY (`id`)
+        REFERENCES `SourceMessage` (`id`)
+        ON DELETE CASCADE)
+    COLLATE = utf8_bin;
+
+#### 5. Re-generate models
+
+Use Gii as per the official documentation. To be able to save translations, you'll need to generate the models Message and SourceMessage as well.
 
 Usage
 -----
@@ -178,9 +202,11 @@ Changelog
 
 - Eases the translation of user-generated content in a project
 - Eases the creation of UI for translators to perform translation work
-- Works with any Yii-compatible message source
-- Write-ability when using CDbMessageSource
+- Works with any Yii-compatible message source when retrieving translations
+- Saving of translations when using CDbMessageSource
 - Console command automatically creates migrations for the necessary database changes
+- The source message is left in the model for Gii compatibility (generated models will have the correct validation rules and field order for the translated attributes)
+- Rigorous unit tests
 
 ### 0.0.0
 
@@ -232,12 +258,15 @@ You should get output similar to:
     Trying to get (BasicTest::get) - Ok
     Trying to set without suffix (BasicTest::setWithoutSuffix) - Ok
     Trying to set with suffix (BasicTest::setWithSuffix) - Ok
-    Trying to save single without suffix (BasicTest::saveSingleWithoutSuffix) - Ok
+    Trying to save single with source message (BasicTest::saveSingleWithSourceMessage) - Ok
+    Trying to save single without source message (BasicTest::saveSingleWithoutSourceMessage) - Ok
     Trying to fetch single without suffix (BasicTest::fetchSingleWithoutSuffix) - Ok
+    Trying to reuse previous translation (BasicTest::reusePreviousTranslation) - Ok
     Trying to update existing (BasicTest::updateExisting) - Ok
+    Trying to further fallback behavior tests (BasicTest::furtherFallbackBehaviorTests) - Ok
     Trying to test test suite (EmptyTest::testTestSuite) - Ok
 
 
-    Time: 0 seconds, Memory: 13.25Mb
+    Time: 0 seconds, Memory: 14.25Mb
 
-    OK (11 tests, 77 assertions)
+    OK (14 tests, 124 assertions)
