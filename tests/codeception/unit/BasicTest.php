@@ -139,13 +139,21 @@ class BasicTest extends \Codeception\TestCase\Test
     public function saveSingleWithoutSuffix()
     {
 
+        $image = new Image;
+        $saveResult = $image->save();
+
+        $this->assertEmpty($image->errors);
+        $this->assertTrue($saveResult);
+
         $book = new Book;
         $book->id = 1;
+        $book->image_id = $image->id;
 
         Yii::app()->language = 'sv';
         $book->title = 'Alkemisten';
         $saveResult = $book->save();
 
+        $this->assertEmpty($book->errors);
         $this->assertTrue($saveResult);
 
         $this->assertEquals($book->title, $book->title_sv);
@@ -174,6 +182,25 @@ class BasicTest extends \Codeception\TestCase\Test
 
         $books = Book::model()->findAll();
         $this->assertEquals(1, count($books));
+
+        // Refresh from db
+        $book->refresh();
+
+        Yii::app()->language = 'sv';
+        $this->assertEquals($book->title, $book->title_sv);
+        $this->assertEquals($book->title, 'Alkemisten');
+        $this->assertEquals($book->title_sv, 'Alkemisten');
+
+        Yii::app()->language = 'en';
+        $this->assertEquals($book->title, $book->title_en);
+        $this->assertEquals($book->title, 'The Alchemist');
+        $this->assertEquals($book->title_en, 'The Alchemist');
+
+        Yii::app()->language = 'en_us';
+        $this->assertEquals($book->title, $book->title_en_us);
+        $this->assertEquals($book->title, 'The Alchemist');
+        $this->assertEquals($book->title_en_us, 'The Alchemist');
+
     }
 
     /**
@@ -182,7 +209,8 @@ class BasicTest extends \Codeception\TestCase\Test
     public function fetchSingleWithoutSuffix()
     {
 
-        $book = Book::model()->findByPk(1);
+        $books = Book::model()->findAll();
+        $book = $books[0];
 
         Yii::app()->language = 'en';
 
