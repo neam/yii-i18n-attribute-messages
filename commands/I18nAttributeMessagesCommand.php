@@ -104,7 +104,6 @@ class I18nAttributeMessagesCommand extends CConsoleCommand
             $behaviors = $model->behaviors();
             foreach ($behaviors['i18n-attribute-messages']['translationAttributes'] as $attribute) {
                 $this->_processAttribute($model, $attribute);
-                $this->d("\n");
             }
         }
 
@@ -121,9 +120,11 @@ class I18nAttributeMessagesCommand extends CConsoleCommand
         $from = $translationAttribute;
         $to = '_' . $translationAttribute;
 
-        $this->d("\t$from -> $to\n");
+        $this->d("\t\t$from -> $to\n");
 
-        if ($this->_checkColumnExists($model, $from) && !$this->_checkColumnExists($model, $to)) {
+        $te = null;
+        $fi = null;
+        if ($fe = $this->_checkColumnExists($model, $from) && !($te = $this->_checkColumnExists($model, $to))) {
 
             // Foreign key checks
             $fromFk = $this->attributeFk($model, $from);
@@ -153,6 +154,13 @@ class I18nAttributeMessagesCommand extends CConsoleCommand
                     . '\', \'' . $model->metaData->tableSchema->foreignKeys[$from][1]
                     . '\', \'' . $fromFk["rules"]["DELETE_RULE"]
                     . '\', \'' . $fromFk["rules"]["UPDATE_RULE"] . '\');';
+            }
+        } else {
+            if ($te) {
+                $this->d("\t\t\tNote: $to already exists - skipping rename...\n");
+            }
+            if (!$fe) {
+                $this->d("\t\t\tNote: $from doesn't exist - skipping rename...\n");
             }
         }
     }
