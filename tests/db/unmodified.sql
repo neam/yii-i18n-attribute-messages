@@ -36,3 +36,28 @@ CREATE TABLE `chapter` (
     REFERENCES `book` (`id` )
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
+
+DROP TABLE IF EXISTS `Message`;
+DROP TABLE IF EXISTS `SourceMessage`;
+
+CREATE TABLE IF NOT EXISTS `SourceMessage` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `category` VARCHAR(32) NULL DEFAULT NULL,
+  `message` TEXT NULL DEFAULT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_bin;
+
+CREATE TABLE IF NOT EXISTS `Message` (
+  `id` INT(11) NOT NULL DEFAULT '0',
+  `language` VARCHAR(16) NOT NULL DEFAULT '',
+  `translation` TEXT NULL DEFAULT NULL,
+  PRIMARY KEY (`id`, `language`),
+  CONSTRAINT `FK_Message_SourceMessage`
+    FOREIGN KEY (`id`)
+    REFERENCES `SourceMessage` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_bin;
