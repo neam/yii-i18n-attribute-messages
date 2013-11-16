@@ -33,6 +33,13 @@ class Book extends CActiveRecord
                         'title',
                         'slug',
                     ),
+                    'languageSuffixes' => array(
+                        'en',
+                        'en_us',
+                        'sv',
+                        'de',
+                        'ch',
+                    ),
                 ),
             )
         );

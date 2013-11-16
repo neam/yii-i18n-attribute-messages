@@ -16,6 +16,10 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     public $translationAttributes = array();
 
     /**
+     * @var array list of valid language suffixes - keep empty to disable this feature
+     */
+    public $languageSuffixes = array();
+
      * @var array list of attributes that are set, but yet to be saved
      */
     private $dirtyAttributes = array();
@@ -125,8 +129,18 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 
     }
 
-    private function getLanguageSuffix($name)
+    public function getLanguageSuffix($name)
     {
+        $lastTwo = substr($name, 2, -2);
+        if (in_array($lastTwo, $this->languageSuffixes)) {
+            return $lastTwo;
+        }
+
+        $lastFive = substr($name, -5, 5);
+        if (in_array($lastFive, $this->languageSuffixes)) {
+            return $lastFive;
+        }
+
         $_ = explode("_", $name);
         $langsuffix = array_pop($_);
         return $langsuffix;
@@ -157,6 +171,15 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         foreach ($this->translationAttributes as $name) {
             $validators->add(CValidator::createValidator('safe', $owner, $name, array()));
         }
+    }
+
+
+    /**
+     * Expose the behavior
+     */
+    public function getI18nAttributeMessagesBehavior()
+    {
+        return $this;
     }
 
 }

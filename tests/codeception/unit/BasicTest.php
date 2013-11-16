@@ -43,13 +43,44 @@ class BasicTest extends \Codeception\TestCase\Test
     /**
      * @test
      */
-    public function getWithoutSuffix()
+    public function ensureKnownSourceLanguage()
+    {
+        $this->assertEquals('en_us', Yii::app()->sourceLanguage);
+    }
+
+    /**
+     * @test
+     */
+    public function seeBehavior()
+    {
+        $book = new Book;
+        $this->assertTrue($book->getI18nAttributeMessagesBehavior() instanceof I18nAttributeMessagesBehavior);
+    }
+
+    /**
+     * @test
+     */
+    public function interpretLanguageSuffix()
+    {
+        $book = new Book;
+        $this->assertEquals('en', $book->getI18nAttributeMessagesBehavior()->getLanguageSuffix('foo_en'));
+        $this->assertEquals('en_us', $book->getI18nAttributeMessagesBehavior()->getLanguageSuffix('foo_en_us'));
+        $this->assertEquals('sv', $book->getI18nAttributeMessagesBehavior()->getLanguageSuffix('foo_sv'));
+    }
+
+    /**
+     * @test
+     */
+    public function get()
     {
 
         $book = new Book;
 
         Yii::app()->language = 'en';
         $this->assertEquals($book->title, $book->title_en);
+
+        Yii::app()->language = 'en_us';
+        $this->assertEquals($book->title, $book->title_en_us);
 
         Yii::app()->language = 'sv';
         $this->assertEquals($book->title, $book->title_sv);
@@ -68,8 +99,14 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertEquals('test', $book->title);
         $this->assertEquals($book->title, $book->title_en);
 
+        Yii::app()->language = 'en_us';
+        $book->title = 'test';
+        $this->assertEquals('test', $book->title);
+        $this->assertEquals($book->title, $book->title_en_us);
+
         Yii::app()->language = 'sv';
         $this->assertNotEquals($book->title, $book->title_en);
+        $this->assertNotEquals($book->title, $book->title_en_us);
         $this->assertEquals($book->title, $book->title_sv);
     }
 
@@ -85,6 +122,11 @@ class BasicTest extends \Codeception\TestCase\Test
         $book->title_en = 'test';
         $this->assertEquals('test', $book->title_en);
         $this->assertEquals($book->title, $book->title_en);
+
+        Yii::app()->language = 'en_us';
+        $book->title_en = 'test';
+        $this->assertEquals('test', $book->title_en_us);
+        $this->assertEquals($book->title, $book->title_en_us);
 
         Yii::app()->language = 'sv';
         $this->assertNotEquals($book->title, $book->title_en);
@@ -109,6 +151,16 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertEquals($book->title, $book->title_sv);
         $this->assertEquals($book->title, 'Alkemisten');
         $this->assertEquals($book->title_sv, 'Alkemisten');
+
+        Yii::app()->language = 'en_us';
+        $book->title = 'The Alchemist';
+        $saveResult = $book->save();
+
+        $this->assertTrue($saveResult);
+
+        $this->assertEquals($book->title, $book->title_en_us);
+        $this->assertEquals($book->title, 'The Alchemist');
+        $this->assertEquals($book->title_en_us, 'The Alchemist');
 
         Yii::app()->language = 'en';
         $book->title = 'The Alchemist';
@@ -136,12 +188,20 @@ class BasicTest extends \Codeception\TestCase\Test
 
         $this->assertEquals($book->title, 'The Alchemist');
         $this->assertEquals($book->title_en, 'The Alchemist');
+        $this->assertEquals($book->title_en_us, 'The Alchemist');
+
+        Yii::app()->language = 'en_us';
+
+        $this->assertEquals($book->title, 'The Alchemist');
+        $this->assertEquals($book->title_sv, 'Alkemisten');
+        $this->assertEquals($book->title_en_us, 'The Alchemist');
 
         Yii::app()->language = 'sv';
 
         $this->assertEquals($book->title, 'Alkemisten');
         $this->assertEquals($book->title_sv, 'Alkemisten');
         $this->assertEquals($book->title_en, 'The Alchemist');
+        $this->assertEquals($book->title_en_us, 'The Alchemist');
     }
 
     /**
@@ -170,7 +230,7 @@ class BasicTest extends \Codeception\TestCase\Test
 
         $book = Book::model()->findByPk(1);
 
-        Yii::app()->language = 'en';
+        Yii::app()->language = 'en_us';
 
         $this->assertEquals($book->title_pt, 'O Diabo Veste Prada');
         $this->assertEquals($book->title_sv, 'Djävulen bär Prada');
