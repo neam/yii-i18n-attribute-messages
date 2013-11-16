@@ -64,9 +64,9 @@ class Chapter extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('id, _book_id', 'required'),
-			array('id, _book_id', 'length', 'max'=>20),
+			array('_book_id', 'required'),
 			array('_title, _slug', 'length', 'max'=>255),
+			array('_book_id', 'length', 'max'=>20),
 			array('created, modified', 'safe'),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.

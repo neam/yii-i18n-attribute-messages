@@ -40,8 +40,6 @@ class Image extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('id', 'required'),
-			array('id', 'length', 'max'=>20),
 			array('path', 'length', 'max'=>255),
 			array('created, modified', 'safe'),
 			// The following rule is used by search().

@@ -64,9 +64,9 @@ class Book extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('id, image_id', 'required'),
-			array('id, image_id', 'length', 'max'=>20),
+			array('image_id', 'required'),
 			array('_title, _slug', 'length', 'max'=>255),
+			array('image_id', 'length', 'max'=>20),
 			array('created, modified', 'safe'),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
