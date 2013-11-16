@@ -160,16 +160,6 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertEquals($book->title, 'Alkemisten');
         $this->assertEquals($book->title_sv, 'Alkemisten');
 
-        Yii::app()->language = 'en_us';
-        $book->title = 'The Alchemist';
-        $saveResult = $book->save();
-
-        $this->assertTrue($saveResult);
-
-        $this->assertEquals($book->title, $book->title_en_us);
-        $this->assertEquals($book->title, 'The Alchemist');
-        $this->assertEquals($book->title_en_us, 'The Alchemist');
-
         Yii::app()->language = 'en';
         $book->title = 'The Alchemist';
         $saveResult = $book->save();
@@ -179,6 +169,27 @@ class BasicTest extends \Codeception\TestCase\Test
         $this->assertEquals($book->title, $book->title_en);
         $this->assertEquals($book->title, 'The Alchemist');
         $this->assertEquals($book->title_en, 'The Alchemist');
+
+        Yii::app()->language = 'de';
+        $book->title = 'Der Alchimist';
+        $saveResult = $book->save();
+
+        $this->assertTrue($saveResult);
+
+        $this->assertEquals($book->title, $book->title_de);
+        $this->assertEquals($book->title, 'Der Alchimist');
+        $this->assertEquals($book->title_de, 'Der Alchimist');
+        $this->assertEquals($book->title_en, 'The Alchemist');
+
+        Yii::app()->language = 'en_us';
+        $book->title = 'The Alchemist';
+        $saveResult = $book->save();
+
+        $this->assertTrue($saveResult);
+
+        $this->assertEquals($book->title, $book->title_en_us);
+        $this->assertEquals($book->title, 'The Alchemist');
+        $this->assertEquals($book->title_en_us, 'The Alchemist');
 
         $books = Book::model()->findAll();
         $this->assertEquals(1, count($books));
