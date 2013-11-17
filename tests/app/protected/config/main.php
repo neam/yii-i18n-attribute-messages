@@ -85,6 +85,7 @@ return array(
 	// application-level parameters that can be accessed
 	// using Yii::app()->params['paramName']
 	'params'=>array(
+        'languages' => require('languages.php'),
 		// this is used in contact page
 		'adminEmail'=>'webmaster@example.com',
 	),
