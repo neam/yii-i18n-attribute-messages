@@ -173,7 +173,7 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 
     public function getCategory($originalAttribute)
     {
-        return 'attributes-' . get_class($this->owner) . '-' . $originalAttribute;
+        return substr('a-' . get_class($this->owner) . '-' . $originalAttribute, 0, 32);
     }
 
     public function getSourceMessage($originalAttribute)
