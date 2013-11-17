@@ -91,6 +91,7 @@ If you don't use composer, clone or download this project into /path/to/your/app
         return array(
             'i18n-attribute-messages' => array(
                  'class' => 'I18nAttributeMessagesBehavior',
+
                  /* The multilingual attributes */
                  'translationAttributes' => array(
                       'title',
@@ -98,6 +99,13 @@ If you don't use composer, clone or download this project into /path/to/your/app
                       'book_id',
                       //'etc',
                  ),
+
+                /* An array of allowed language/locale ids that are to be used as suffixes, such as title_en, title_de etc */
+                //'languageSuffixes' => array_keys(Yii::app()->params["languages"]),
+
+                /* Configure if you want to use another translation component for this behavior. Default is 'messages' */
+                //'messageSourceComponent' => 'attributeMessages',
+
             ),
         );
     }
@@ -163,6 +171,23 @@ Save-support is only enabled if you use CDbMessageSource. Configure your app to 
         REFERENCES `SourceMessage` (`id`)
         ON DELETE CASCADE)
     COLLATE = utf8_bin;
+
+Hint: You can still keep CPhpMessageSource as the default messages component for your app, and configure CDbMessageSource to be used only for attribute messages.
+
+Your application config should have two message source components configured:
+
+    ...
+        // Static messages
+        'messages' => array(
+            'class' => 'CPhpMessageSource',
+        ),
+        // Attribute messages
+        'attributeMessages' => array(
+            'class' => 'CDbMessageSource',
+        ),
+    ...
+
+And when configuring the behavior, set an appropriate 'messageSourceComponent' configuration option (see example configuration above).
 
 #### 5. Re-generate models
 
