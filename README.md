@@ -239,7 +239,7 @@ When we construct a translation UI, we want the fields to be `null` until they h
 
     'import' => array(
         ...
-        'i18n-attribute-messages.behaviors.I18nAttributeMessagesBehavior',
+        'i18n-attribute-messages.components.MissingTranslationHandler',
         ...
     ),
 
