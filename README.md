@@ -55,6 +55,7 @@ Then install through composer:
 If you don't use composer, clone or download this project into /path/to/your/app/vendor/neam/yii-i18n-attribute-messages
 
 ### Add Alias to both main.php and console.php
+
     'aliases' => array(
         ...
         'vendor'  => dirname(__FILE__) . '/../../vendor',
@@ -176,7 +177,8 @@ Hint: You can still keep CPhpMessageSource as the default messages component for
 
 Your application config should have two message source components configured:
 
-    ...
+    'components' => array(
+        ...
         // Static messages
         'messages' => array(
             'class' => 'CPhpMessageSource',
@@ -185,7 +187,8 @@ Your application config should have two message source components configured:
         'attributeMessages' => array(
             'class' => 'CDbMessageSource',
         ),
-    ...
+        ...
+    ),
 
 And when configuring the behavior, set an appropriate 'messageSourceComponent' configuration option (see example configuration above).
 
@@ -200,7 +203,9 @@ Example usage with a Book model that has a multilingual *title* attribute.
 
 All translations will be available through attribute suffix, ie `$book->title_en` for the english translation, `$book->title_sv` for the swedish translation. `$book->title` will be an alias for the currently selected language's translation.
 
-### Fetching translations
+### Reading and saving translations
+
+#### Fetching translations
 
      $book = Book::model()->findByPk(1);
      Yii::app()->language = 'en';
@@ -209,21 +214,86 @@ All translations will be available through attribute suffix, ie `$book->title_en
      echo $book->title; // Outputs 'Alkemisten'
      echo $book->title_en; // Outputs 'The Alchemist'
 
-### Saving a single translation
+#### Saving a single translation
 
      Yii::app()->language = 'sv';
      $book->title = 'Djävulen bär Prada';
      $book->save(); // Saves 'Djävulen bär Prada' as if it was assigned to Book.title_sv
 
-### Saving multiple translations
+#### Saving multiple translations
 
      $book->title_en = 'The Devil Wears Prada';
      $book->title_sv = 'Djävulen bär Prada';
      $book->save(); // Saves both translations
 
-### More examples
+#### More examples
 
 ...can be found in tests/codeception/unit/BasicTest.php
+
+### Creating a UI for translators
+
+#### Configuration
+
+The default behavior when a translation is missing is to return the source message.
+When we construct a translation UI, we want the fields to be `null` until they have a translation.
+
+    'import' => array(
+        ...
+        'i18n-attribute-messages.behaviors.I18nAttributeMessagesBehavior',
+        ...
+    ),
+
+    'components' => array(
+        ...
+        'attributeMessages' => array(
+            'class' => 'CDbMessageSource',
+            'onMissingTranslation' => array('MissingTranslationHandler', 'returnNull'),
+        ),
+        ...
+    ),
+
+#### Creating an input to change the source language content of the field "title"
+
+    <div class="row">
+        <?php echo $form->labelEx($model,'_title'); ?>
+        <?php echo $form->textField($model,'_title'); ?>
+        <?php echo $form->error($model,'_title'); ?>
+    </div>
+
+Note: This field is generated automatically by Gii.
+
+#### Creating an input to set/update the swedish translation of the field "title"
+
+    <div class="row">
+        <?php echo $form->labelEx($model,'title_sv'); ?>
+        <?php echo $form->textField($model,'title_sv'); ?>
+        <?php echo $form->error($model,'title_sv'); ?>
+    </div>
+
+Hint: You might want to display the source language content next to the translation field, like so:
+
+    <div class="row">
+        <?php echo Yii::t('app', 'Content to translate'); ?>: <?php echo CHtml::encode($model->_title); ?>
+    </div>
+    <div class="row">
+        <?php echo $form->labelEx($model,'title_sv'); ?>
+        <?php echo $form->textField($model,'title_sv'); ?>
+        <?php echo $form->error($model,'title_sv'); ?>
+    </div>
+
+Also, don't forget to adjust the validation rules (safe, required, etc) for the virtual translation fields.
+
+#### Creating an input to set/update the current app language's translation of the field "title"
+
+    <div class="row">
+        <?php echo $form->labelEx($model,'title'); ?>
+        <?php echo $form->textField($model,'title'); ?>
+        <?php echo $form->error($model,'title'); ?>
+    </div>
+
+### More examples
+
+Simply look at any other examples of form building in Yii. Since the translated attributes are ordinary model attributes, you may use core or third-party extensions that save to and read from model attributes for constructing your translation UI.
 
 Changelog
 ---------
