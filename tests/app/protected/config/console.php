@@ -11,33 +11,27 @@ return array(
 
     // i18n-columns
     'aliases' => array(
-        'i18n-columns' => dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..',
+        'i18n-attribute-messages' => dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..',
     ),
     'import' => array(
-        'i18n-columns.behaviors.I18nColumnsBehavior',
+        'i18n-attribute-messages.behaviors.I18nAttributeMessagesBehavior',
     ),
     'language' => 'en',
     'commandMap' => array(
-        'i18n-columns'    => array(
-            'class' => 'i18n-columns.commands.I18nColumnsCommand',
+        'i18n-attribute-messages'    => array(
+            'class' => 'i18n-attribute-messages.commands.I18nAttributeMessagesCommand',
         ),
     ),
 
 	// application components
 	'components'=>array(
-        'db' => array(
-            'connectionString' => 'sqlite:'.dirname(__FILE__).'/../../../db/test.db',
-        ),
-		// uncomment the following to use a MySQL database
-		/*
 		'db'=>array(
-			'connectionString' => 'mysql:host=localhost;dbname=testdrive',
+			'connectionString' => 'mysql:host=localhost;dbname=yiam_test',
 			'emulatePrepare' => true,
-			'username' => 'root',
-			'password' => '',
+			'username' => 'yiam_test',
+			'password' => 'yiam_test',
 			'charset' => 'utf8',
 		),
-		*/
 		'log'=>array(
 			'class'=>'CLogRouter',
 			'routes'=>array(

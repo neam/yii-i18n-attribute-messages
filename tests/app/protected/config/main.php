@@ -14,7 +14,7 @@ return array(
 
     // i18n-columns
     'aliases' => array(
-        'i18n-columns' => dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..',
+        'i18n-attribute-messages' => dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..',
     ),
     'language' => 'en',
 
@@ -22,19 +22,16 @@ return array(
 	'import'=>array(
 		'application.models.*',
 		'application.components.*',
-        'i18n-columns.behaviors.I18nColumnsBehavior',
+        'i18n-attribute-messages.behaviors.I18nAttributeMessagesBehavior',
 	),
 
 	'modules'=>array(
-		// uncomment the following to enable the Gii tool
-		/*
 		'gii'=>array(
 			'class'=>'system.gii.GiiModule',
-			'password'=>'Enter Your Password Here',
+			'password'=>'yiam_test',
 			// If removed, Gii defaults to localhost only. Edit carefully to taste.
 			'ipFilters'=>array('127.0.0.1','::1'),
 		),
-		*/
 	),
 
 	// application components
@@ -43,16 +40,8 @@ return array(
 			// enable cookie-based authentication
 			'allowAutoLogin'=>true,
 		),
-        'langHandler'=>array(
-            'languages'=>array(
-                'en',
-                'es',
-                'fa',
-                'hi',
-                'pt',
-                'sv',
-                'de',
-            )
+        'messages'=>array(
+            'class'=>'CDbMessageSource',
         ),
 		// uncomment the following to enable URLs in path-format
 		/*
@@ -66,18 +55,12 @@ return array(
 		),
 		*/
 		'db'=>array(
-			'connectionString' => 'sqlite:'.dirname(__FILE__).'/../../../db/test.db',
-		),
-		// uncomment the following to use a MySQL database
-		/*
-		'db'=>array(
-			'connectionString' => 'mysql:host=localhost;dbname=testdrive',
+			'connectionString' => 'mysql:host=localhost;dbname=yiam_test',
 			'emulatePrepare' => true,
-			'username' => 'root',
-			'password' => '',
+			'username' => 'yiam_test',
+			'password' => 'yiam_test',
 			'charset' => 'utf8',
 		),
-		*/
 		'errorHandler'=>array(
 			// use 'site/error' action to display errors
 			'errorAction'=>'site/error',
@@ -102,6 +85,7 @@ return array(
 	// application-level parameters that can be accessed
 	// using Yii::app()->params['paramName']
 	'params'=>array(
+        'languages' => require('languages.php'),
 		// this is used in contact page
 		'adminEmail'=>'webmaster@example.com',
 	),

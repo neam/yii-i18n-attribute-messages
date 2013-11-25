@@ -1,25 +1,33 @@
-Yii Extension: I18nColumns
+Yii Extension: I18nAttributeMessages
 ==========================
 
-Transparent language/locale-dependent attributes and relations for ActiveRecords, without using lookup tables for translated field contents.
+Transparent attribute translation for ActiveRecords, leveraging Yii's built-in translation features to retrieve translated attribute contents.
+
+All you'll need to do is to rename the fields from `$book->title` to `$book->_title` in your database. The included console command scans your database and configuration and creates a migration for all necessary renames.
+
+The behavior then transparently turns `$book->title` into `Yii:t('attributes.Book.title', $book->_title)` and `$book->title_de` into `Yii:t('attributes.Book.title', $book->_title, array(), null, 'de')`, while providing transparent saving of translations simply by assigning and saving these attributes in the model (Note: CDbMessageSource only).
 
 Features
 --------
 
- * Eases the creation of multilingual ActiveRecords in a project
- * Automatically loads the application language by default
- * Translations are stored directly in the model using separate columns for each language
+ * Eases the translation of user-generated content in a project
+ * Eases the creation of UI for translators to perform translation work
+ * Works with any Yii-compatible message source when retrieving translations
+ * Saving of translations when using CDbMessageSource
  * Console command automatically creates migrations for the necessary database changes
- * Leverages Gii code generation to provide CRUD for translation work
- * Not only translations - any attribute or relation that is dependent on language or locale can be managed with this extension
+ * The source message is left in the model for Gii compatibility (generated models will have the correct validation rules and field order for the translated attributes)
+ * Rigorous unit tests
+ * Use with any number of attributes/languages without worrying about database restrictions on row size and/or column counts being exceeded
+
+Limitations
+-------------
+Not ideal for translated attributes that are supposed to be native in the active records' database tables, such as translated foreign keys, or multilingual look-up/search columns. Use [https://github.com/neam/yii-i18n-columns](https://github.com/neam/yii-i18n-columns) for those attributes instead.
 
 Requirements
 ------------------
 
  * Yii 1.1 or above
  * Use of Yii console
- * Use of Gii (preferably [Gtc](https://github.com/schmunk42/gii-template-collection/))
- * MySQL 5.1.10+, SQL Server 2012 or similarly recent database (For the console command. The behavior itself works with any Yii-supported database)
 
 Setup
 -----
@@ -31,26 +39,27 @@ Ensure that you have the following in your composer.json:
     "repositories":[
         {
             "type": "vcs",
-            "url": "https://github.com/neam/yii-i18n-columns"
+            "url": "https://github.com/neam/yii-i18n-attribute-messages"
         },
         ...
     ],
     "require":{
-        "neam/yii-i18n-columns":"@dev",
+        "neam/yii-i18n-attribute-messages":"dev-master",
         ...
     },
 
 Then install through composer:
 
-    php composer.php install neam/yii-i18n-columns
+    php composer.phar update neam/yii-i18n-attribute-messages
 
-If you don't use composer, clone or download this project into /path/to/your/app/vendor/neam/yii-i18n-columns
+If you don't use composer, clone or download this project into /path/to/your/app/vendor/neam/yii-i18n-attribute-messages
 
 ### Add Alias to both main.php and console.php
+
     'aliases' => array(
         ...
         'vendor'  => dirname(__FILE__) . '/../../vendor',
-        'i18n-columns' => 'vendor.neam.yii-i18n-columns',
+        'i18n-attribute-messages' => 'vendor.neam.yii-i18n-attribute-messages',
         ...
     ),
 
@@ -58,17 +67,17 @@ If you don't use composer, clone or download this project into /path/to/your/app
 
     'import' => array(
         ...
-        'i18n-columns.behaviors.I18nColumnsBehavior',
+        'i18n-attribute-messages.behaviors.I18nAttributeMessagesBehavior',
         ...
     ),
 
 
-### Reference the translate command in console.php
+### Reference the console command in console.php
 
     'commandMap' => array(
         ...
-        'i18n-columns'    => array(
-            'class' => 'i18n-columns.commands.I18nColumnsCommand',
+        'i18n-attribute-messages'    => array(
+            'class' => 'i18n-attribute-messages.commands.I18nAttributeMessagesCommand',
         ),
         ...
     ),
@@ -81,66 +90,111 @@ If you don't use composer, clone or download this project into /path/to/your/app
     public function behaviors()
     {
         return array(
-            'i18n-columns' => array(
-                 'class' => 'I18nColumnsBehavior',
+            'i18n-attribute-messages' => array(
+                 'class' => 'I18nAttributeMessagesBehavior',
+
                  /* The multilingual attributes */
                  'translationAttributes' => array(
                       'title',
                       'slug',
-                      'image_id',
-                      'etc',
+                      'book_id',
+                      //'etc',
                  ),
-                /* Specify multilingual belongsTo relations in the form 'RelatedModel' => array('relationName' => 'foreignKey') */
-                'multilingualRelations' => array(
-                    'Image' => array('image' => 'image_id'),
-                ),
+
+                /* An array of allowed language/locale ids that are to be used as suffixes, such as title_en, title_de etc */
+                //'languageSuffixes' => array_keys(Yii::app()->params["languages"]),
+
+                /* Configure if you want to use another translation component for this behavior. Default is 'messages' */
+                //'messageSourceComponent' => 'attributeMessages',
+
             ),
         );
     }
 
 #### 2. Create migration from command line:
 
-`./yiic i18n-columns process`
-
-Prior to this, you should already have configured a default language (`$config['language']`) and available languages (`$config['components']['langHandler']['languages']`) for your app.
+    ./yiic i18n-attribute-messages process
 
 Run with `--verbose` to see more detailed output.
 
 #### 3. Apply the generated migration:
 
-`./yiic migrate`
+    ./yiic migrate
 
-This will rename the fields that are defined in translationAttributes to fieldname_defaultlanguagecode and add columns for the remaining languages.
+This will rename the fields that are defined in translationAttributes to _fieldname, which will be the placed that the source content is stored (the content that is to be translated).
 
 Sample migration file:
 
 	<?php
-	class m130708_165204_i18n extends CDbMigration
-	{
-	    public function up()
-	    {
-		$this->renameColumn('section', 'title', 'title_en');
-		$this->renameColumn('section', 'slug', 'slug_en');
-		$this->addColumn('section', 'title_sv', 'varchar(255) null');
-		$this->addColumn('section', 'slug_sv', 'varchar(255) null');
-		$this->addColumn('section', 'title_de', 'varchar(255) null');
-		$this->addColumn('section', 'slug_de', 'varchar(255) null');
-	    }
+    class m131115_204413_i18n extends CDbMigration
+    {
+        public function up()
+        {
+            $this->renameColumn('book', 'title', '_title');
+            $this->renameColumn('book', 'slug', '_slug');
+            $this->renameColumn('chapter', 'title', '_title');
+            $this->renameColumn('chapter', 'slug', '_slug');
+            $this->dropForeignKey('fk_chapter_book', 'chapter');
+            $this->renameColumn('chapter', 'book_id', '_book_id');
+            $this->addForeignKey('fk_chapter_book', 'chapter', '_book_id', 'book', 'id', 'NO ACTION', 'NO ACTION');
+        }
 
-	    public function down()
-	    {
-	      $this->renameColumn('section', 'title_en', 'title');
-	      $this->renameColumn('section', 'slug_en', 'slug');
-	      $this->dropColumn('section', 'title_sv');
-	      $this->dropColumn('section', 'slug_sv');
-	      $this->dropColumn('section', 'title_de');
-	      $this->dropColumn('section', 'slug_de');
-	    }
-	}
+        public function down()
+        {
+          $this->renameColumn('book', '_title', 'title');
+          $this->renameColumn('book', '_slug', 'slug');
+          $this->renameColumn('chapter', '_title', 'title');
+          $this->renameColumn('chapter', '_slug', 'slug');
+          $this->dropForeignKey('fk_chapter_book', 'chapter');
+          $this->renameColumn('chapter', '_book_id', 'book_id');
+          $this->addForeignKey('fk_chapter_book', 'chapter', 'book_id', 'book', 'id', 'NO ACTION', 'NO ACTION');
+        }
+    }
 
-#### 4. Re-generate models
+#### 4. Add save-support
 
-Use Gii as per the official documentation. After this, you have multilingual Active Records at your disposal :)
+Save-support is only enabled if you use CDbMessageSource. Configure your app to use it and make sure the following tables (Note: with auto-increment for SourceMessage) exists:
+
+    CREATE TABLE `SourceMessage` (
+      `id` INT(11) NOT NULL AUTO_INCREMENT,
+      `category` VARCHAR(32) NULL DEFAULT NULL,
+      `message` TEXT NULL DEFAULT NULL,
+      PRIMARY KEY (`id`))
+    COLLATE = utf8_bin;
+
+    CREATE TABLE `Message` (
+      `id` INT(11) NOT NULL DEFAULT '0',
+      `language` VARCHAR(16) NOT NULL DEFAULT '',
+      `translation` TEXT NULL DEFAULT NULL,
+      PRIMARY KEY (`id`, `language`),
+      CONSTRAINT `FK_Message_SourceMessage`
+        FOREIGN KEY (`id`)
+        REFERENCES `SourceMessage` (`id`)
+        ON DELETE CASCADE)
+    COLLATE = utf8_bin;
+
+Hint: You can still keep CPhpMessageSource as the default messages component for your app, and configure CDbMessageSource to be used only for attribute messages.
+
+Your application config should have two message source components configured:
+
+    'components' => array(
+        ...
+        // Static messages
+        'messages' => array(
+            'class' => 'CPhpMessageSource',
+        ),
+        // Attribute messages
+        'attributeMessages' => array(
+            'class' => 'CDbMessageSource',
+        ),
+        ...
+    ),
+
+And when configuring the behavior, set an appropriate 'messageSourceComponent' configuration option (see example configuration above).
+
+#### 5. Re-generate models
+
+Use Gii as per the official documentation. To be able to save translations, you'll need to generate the models Message and SourceMessage as well.
 
 Usage
 -----
@@ -149,7 +203,9 @@ Example usage with a Book model that has a multilingual *title* attribute.
 
 All translations will be available through attribute suffix, ie `$book->title_en` for the english translation, `$book->title_sv` for the swedish translation. `$book->title` will be an alias for the currently selected language's translation.
 
-### Fetching translations
+### Reading and saving translations
+
+#### Fetching translations
 
      $book = Book::model()->findByPk(1);
      Yii::app()->language = 'en';
@@ -158,161 +214,159 @@ All translations will be available through attribute suffix, ie `$book->title_en
      echo $book->title; // Outputs 'Alkemisten'
      echo $book->title_en; // Outputs 'The Alchemist'
 
-### Saving a single translation
+#### Saving a single translation
 
      Yii::app()->language = 'sv';
      $book->title = 'Djävulen bär Prada';
-     $book->save(); // Saves 'Djävulen bär Prada' to Book.title_sv
+     $book->save(); // Saves 'Djävulen bär Prada' as if it was assigned to Book.title_sv
 
-### Saving multiple translations
+#### Saving multiple translations
 
      $book->title_en = 'The Devil Wears Prada';
      $book->title_sv = 'Djävulen bär Prada';
      $book->save(); // Saves both translations
 
+#### More examples
+
+...can be found in tests/codeception/unit/BasicTest.php
+
+### Creating a UI for translators
+
+#### Configuration
+
+The default behavior when a translation is missing is to return the source message.
+When we construct a translation UI, we want the fields to be `null` until they have a translation.
+
+    'import' => array(
+        ...
+        'i18n-attribute-messages.behaviors.I18nAttributeMessagesBehavior',
+        ...
+    ),
+
+    'components' => array(
+        ...
+        'attributeMessages' => array(
+            'class' => 'CDbMessageSource',
+            'onMissingTranslation' => array('MissingTranslationHandler', 'returnNull'),
+        ),
+        ...
+    ),
+
+#### Creating an input to change the source language content of the field "title"
+
+    <div class="row">
+        <?php echo $form->labelEx($model,'_title'); ?>
+        <?php echo $form->textField($model,'_title'); ?>
+        <?php echo $form->error($model,'_title'); ?>
+    </div>
+
+Note: This field is generated automatically by Gii.
+
+#### Creating an input to set/update the swedish translation of the field "title"
+
+    <div class="row">
+        <?php echo $form->labelEx($model,'title_sv'); ?>
+        <?php echo $form->textField($model,'title_sv'); ?>
+        <?php echo $form->error($model,'title_sv'); ?>
+    </div>
+
+Hint: You might want to display the source language content next to the translation field, like so:
+
+    <div class="row">
+        <?php echo Yii::t('app', 'Content to translate'); ?>: <?php echo CHtml::encode($model->_title); ?>
+    </div>
+    <div class="row">
+        <?php echo $form->labelEx($model,'title_sv'); ?>
+        <?php echo $form->textField($model,'title_sv'); ?>
+        <?php echo $form->error($model,'title_sv'); ?>
+    </div>
+
+Also, don't forget to adjust the validation rules (safe, required, etc) for the virtual translation fields.
+
+#### Creating an input to set/update the current app language's translation of the field "title"
+
+    <div class="row">
+        <?php echo $form->labelEx($model,'title'); ?>
+        <?php echo $form->textField($model,'title'); ?>
+        <?php echo $form->error($model,'title'); ?>
+    </div>
+
 ### More examples
 
-...can be found in tests/unit/I18nColumnsTest.php
+Simply look at any other examples of form building in Yii. Since the translated attributes are ordinary model attributes, you may use core or third-party extensions that save to and read from model attributes for constructing your translation UI.
 
 Changelog
 ---------
 
-### 0.3.1 (development release)
-
-- Command action to remove columns, related to an unused language, from the schema
-
-### 0.3.0 (development release)
-
-- Virtual access to multilingual foreign keys (ie $model->relationName is mapped to $model->relationNameId{Lang})
-- Command action to remove columns, related to an unused language, from the schema
-- Some bug fixes
-
-### 0.2.0 (latest stable)
-
-- Supporting multilingual foreign keys
-- Incremental addition of new i18n columns as more languages are added
-- Source code is formatted according to the PSR2 standard
-
 ### 0.1.0
 
-- Renamed to I18nColumns (to clarify the underlying concept)
-- More accurate model detection (not searching model source files for a hard-coded string...)
-- Cleaned up (does not contain a complete Yii application, only the necessary extension files)
-- Composer support
-- Improved instructions directly in README
-- Updated to work with Yii 1.1.13
-- Unit tests
+- Eases the translation of user-generated content in a project
+- Eases the creation of UI for translators to perform translation work
+- Works with any Yii-compatible message source when retrieving translations
+- Saving of translations when using CDbMessageSource
+- Console command automatically creates migrations for the necessary database changes
+- The source message is left in the model for Gii compatibility (generated models will have the correct validation rules and field order for the translated attributes)
+- Rigorous unit tests
 
 ### 0.0.0
 
-- Forked [https://github.com/firstrow/STranslateableBehavior](https://github.com/firstrow/STranslateableBehavior)
+- Forked [https://github.com/neam/yii-i18n-columns](https://github.com/neam/yii-i18n-columns) v0.3.1
 
-Credits
--------
-
-- [@firstrow](https://github.com/firstrow) for creating STranslateableBehavior which introduced the concept of column-based i18n for Yii
-- [@mikehaertl](https://github.com/mikehaertl) for [the getter/setter logic](https://github.com/mikehaertl/translatable/blob/master/Translatable.php#L60)
-- [@schmunk42](https://github.com/schmunk42), [@tonydspaniard](https://github.com/tonydspaniard) and [@Crisu83](https://github.com/Crisu83) for advice and healthy critique
-- [@clevertech](https://github.com/clevertech) for initial tests directory structure
-
-FAQ
----
-
-### Why use suffixed columns instead of one or many lookup tables?
-
-#### 1. Compatibility with Gii and other Yii extensions
-
-Your multilingual models will keep working as ordinary models, albeit with more fields than before. You can generate new CRUD and instantly have a translation interface for all your languages.
-
-This means that **you will quickly be able to add multilingual content earlier in the development cycle**.
-
-Having a simple multilingual datamodel most likely means better compatibility with other extensions offering magic tooling, such as saving many-many relations, providing search/filtering features, form-generators, editable grid views, etc. It is our experience that these extensions need more custom fitting the higher the amount of joins necessary to show relevant information.
-
-#### 2. You are no longer dependent on magic tooling (such as ActiveRecord)
-
-There is no need to create advanced join-helpers to access the translated attributes, they are simply attributes in the table to begin with. Thus, creating SQL to interact with translations is very straightforward:
-
-`SELECT id, title_en AS title FROM book WHERE title_en = 'The Alchemist';`
-
-This may not be a notable difference when you prototype your application, but becomes more important when you move away from ActiveRecord and write queries using QueryBuilder, pure SQL, or in a barebone PHP/C layer/app side by side with your Yii application (for performance reasons).
-
-#### 3. Matter of taste scalability-wise
-
-Let's pone that we have 40 languages and 300.000 *book* records with 8 translatable fields each, as well as 2 million *chapter* records, with 4 translatable fields each.
-
-#### What do you prefer?
-
-##### A. Suffixed columns
-
-    Table book with 320 columns and 300.000 records
-    Table chapter with 160 columns and 2 million records
-
-##### B. One translation table for book and one for chapter
-
-    Table book with 8 columns and 300.000 records
-    Table chapter with 4 columns and 2 million records
-    Table book_translation with 3 columns and 96 million records
-    Table chapter_translation with 3 columns and 320 million records
-
-##### C. One translation table for all records:
-
-    Table book with 8 columns and 300.000 records
-    Table chapter with 4 columns and 2 million records
-    Table translation with 3 columns and 416 million records
-
-#### 4. Decreased complexity = Flexibility
-
-Say you have a query that without translated fields requires 7 joins, a group by clause and 1-2 subqueries. Then add the necessity to add one more join for each translated field and still achieve a high-performant query. It certainly is possible, but with the cost of added complexity.
-
-In essence, the concept of having suffixed columns instead of translation table(s) is similar to the concept of code generation. You add extra complexity to generate the code/datamodel and receive the benefit of a code base that is easier to maintain and customize.
-
-#### 5. Why not?
-
-Despite #1-4 above, this approach does not fit the bill for most projects. It can be seen as anti-quick and too simplistic to be a truly robust solution.
-
-For instance, if you actually have as many translations as noted in #3 above, you'd probably be better of with a single translation table stored in a key-value-based NoSQL solution. Then, however, you will no longer be able to join the translated data into SQL-queries directly (for whatever that's worth), and handling translations is probably best done using crowd-sourced platforms than Yii-powered backends.
-
-Also, when the system should be developer independent once shipped, adding languages on-the-fly would need either to be done by adding "all" languages to the datamodel from the beginning (and then merely activating more languages as you go along), or automated with a script similar to (to add the extra columns to the models):
-
-    #!/bin/bash
-    ./yiic i18n-columns
-    ./yiic migrate
-    curl https://.…gii-generate-base-models
-
-In general, it will not fit larger projects that are aimed at high-performing stable frontends, but will be more suitable when the main priority is to quickly build feature-complete backends for multilingual content, for which the data model changes often. Migrations and CRUD generation is a part of the daily workflow while developing such solutions, and simplicity and easy customization of the generated code often more important than developer independence.
-
-Then again, this extension is written to be as similar as possible to [mike's translatable behavior](https://github.com/mikehaertl/translatable) in usage and configuration, making it easy to later migrate to a translation-table-based approach after initial prototyping.
-
-What other reasons do you have to not use this horizontal approach to multilingual tables? We'd love to hear your views, [open an issue](https://github.com/neam/yii-i18n-columns/issues) and tell us! :)
-
-Running tests
+Testing the extension
 -------------
 
-    cd vendor/neam/yii-i18n-columns
-    php path/to/composer.phar install --dev
-    cd tests
-    ../vendor/bin/phpunit --verbose --debug
+### One-time preparations
 
-This should result in an output similar to:
+Switch to the extension's root directory
 
-	PHPUnit 3.7.22 by Sebastian Bergmann.
+    cd vendor/neam/yii-i18n-attribute-messages
 
-	Configuration read from /path/to/app/vendor/neam/yii-i18n-columns/tests/phpunit.xml
+Create a database called yiam_test in your local mysql server installation. Create a user called yiam_test with yiam_test as the password and make sure that this user has access to the local database.
+
+After this, you can run the following routine to test the extension:
+
+### Test the command
+
+#### 1. Set-up the test database
+
+Load tests/db/unmodified.sql into the database.
+
+#### 2. Run the console command
+
+    tests/app/protected/yiic i18n-attribute-messages process
+
+#### 3. Apply the migration
+
+    tests/app/protected/yiic migrate
+
+### Test the behavior
+
+Run the unit tests
+
+    php codecept.phar run unit
+
+You should get output similar to:
+
+    Codeception PHP Testing Framework v1.6.2
+    Powered by PHPUnit 3.7.19 by Sebastian Bergmann.
+
+    Suite unit started
+    Trying to ensure empty db (BasicTest::ensureEmptyDb) - Ok
+    Trying to ensure known source language (BasicTest::ensureKnownSourceLanguage) - Ok
+    Trying to see behavior (BasicTest::seeBehavior) - Ok
+    Trying to interpret language suffix (BasicTest::interpretLanguageSuffix) - Ok
+    Trying to get (BasicTest::get) - Ok
+    Trying to set without suffix (BasicTest::setWithoutSuffix) - Ok
+    Trying to set with suffix (BasicTest::setWithSuffix) - Ok
+    Trying to save single with source message (BasicTest::saveSingleWithSourceMessage) - Ok
+    Trying to save single without source message (BasicTest::saveSingleWithoutSourceMessage) - Ok
+    Trying to fetch single without suffix (BasicTest::fetchSingleWithoutSuffix) - Ok
+    Trying to reuse previous translation (BasicTest::reusePreviousTranslation) - Ok
+    Trying to update existing (BasicTest::updateExisting) - Ok
+    Trying to further fallback behavior tests (BasicTest::furtherFallbackBehaviorTests) - Ok
+    Trying to test test suite (EmptyTest::testTestSuite) - Ok
 
 
-	Starting test 'I18nColumnsTest::ensureEmptyDb'.
-	.
-	Starting test 'I18nColumnsTest::getWithoutSuffix'.
-	.
-	Starting test 'I18nColumnsTest::setWithoutSuffix'.
-	.
-	Starting test 'I18nColumnsTest::saveSingleWithoutSuffix'.
-	.
-	Starting test 'I18nColumnsTest::fetchSingleWithoutSuffix'.
-	.
-	Starting test 'I18nColumnsTest::saveMultiple'.
-	.
+    Time: 0 seconds, Memory: 14.25Mb
 
-	Time: 0 seconds, Memory: 10.00Mb
-
-	OK (6 tests, 28 assertions)
+    OK (14 tests, 124 assertions)
