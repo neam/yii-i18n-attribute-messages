@@ -20,5 +20,16 @@ class MissingTranslationHandler
         $event->message = null;
         return $event;
     }
+
+    /**
+     * Simplistic fallback returning the contents in the source language on missing translation
+     * @param $event
+     * @return string
+     */
+    static public function returnSourceLanguageContents($event)
+    {
+        $fallback = Yii::t($event->category, $event->message, array(), null, Yii::app()->sourceLanguage);
+        return $fallback;
+    }
 }
 
