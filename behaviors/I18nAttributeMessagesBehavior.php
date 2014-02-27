@@ -9,6 +9,10 @@
  */
 class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 {
+    /**
+     * @var string name of this behavior (used for attaching it to an owner)..
+     */
+    public $name = 'i18n-attribute-messages';
 
     /**
      * @var array list of attributes to translate
@@ -21,14 +25,24 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     public $languageSuffixes = array();
 
     /**
-     * @var string the message source component to be used with this behavior instance
+     * @var string the message source component to be used for displaying messages with this behavior instance
      */
-    public $messageSourceComponent = "messages";
+    public $displayedMessageSourceComponent = "messages";
+
+    /**
+     * @var string the message source component to be used for editing messages with this behavior instance
+     */
+    public $editedMessageSourceComponent = "messages";
 
     /**
      * @var array list of attributes that are set, but yet to be saved
      */
     private $dirtyAttributes = array();
+
+    /**
+     * @var bool whether to enable to use translation fallbacks
+     */
+    public $messageSourceComponent;
 
     /**
      * Make translated attributes readable, with and without suffix
@@ -204,6 +218,8 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         foreach ($this->translationAttributes as $name) {
             $validators->add(CValidator::createValidator('safe', $owner, $name, array()));
         }
+
+        $this->messageSourceComponent = $this->displayedMessageSourceComponent;
     }
 
     public function afterSave($event)
@@ -297,6 +313,15 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         Yii::app()->setComponent($this->messageSourceComponent, null);
 
         return true;
+    }
+
+    public function edited()
+    {
+        $clone = clone $this;
+        $ownerClone = clone $this->owner;
+        $ownerClone->attachBehavior($this->name, $clone);
+        $ownerClone->asa($this->name)->messageSourceComponent = $this->editedMessageSourceComponent;
+        return $ownerClone;
     }
 
     /**
