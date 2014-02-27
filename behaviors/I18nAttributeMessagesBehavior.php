@@ -9,6 +9,10 @@
  */
 class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 {
+    /**
+     * @var string
+     */
+    public $name = 'i18n-attribute-messages';
 
     /**
      * @var array list of attributes to translate
@@ -21,9 +25,14 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     public $languageSuffixes = array();
 
     /**
-     * @var string the message source component to be used with this behavior instance
+     * @var string the message source component to be used for displaying messages with this behavior instance
      */
-    public $messageSourceComponent = "messages";
+    public $displayedMessageSourceComponent = "messages";
+
+    /**
+     * @var string the message source component to be used for editing messages with this behavior instance
+     */
+    public $editedMessageSourceComponent = "messages";
 
     /**
      * @var array list of attributes that are set, but yet to be saved
@@ -31,11 +40,15 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     private $dirtyAttributes = array();
 
     /**
+     * @var bool whether to enable to use translation fallbacks
+     */
+    public $messageSourceComponent;
+
+    /**
      * Make translated attributes readable, with and without suffix
      */
     public function __get($name)
     {
-
         if (!$this->handlesProperty($name)) {
             return parent::__get($name);
         }
@@ -67,9 +80,14 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
                 return null;
             }
 
-            return Yii::t($this->getCategory($withoutSuffix), $this->getSourceMessage($withoutSuffix), array(), $this->messageSourceComponent, $lang);
+            return Yii::t(
+                $this->getCategory($withoutSuffix),
+                $this->getSourceMessage($withoutSuffix),
+                array(),
+                $this->messageSourceComponent,
+                $lang
+            );
         }
-
     }
 
     /**
@@ -103,7 +121,6 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         if (in_array($withoutSuffix, $this->translationAttributes)) {
             $this->dirtyAttributes[$withSuffix] = $value; // Always store with suffix since we are interested in the language while setting the attribute, not while saving
         }
-
     }
 
     /**
@@ -145,7 +162,6 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
             return $this->dirtyAttributes[$originalAttribute . '_' . $lang];
         }
         return in_array($originalAttribute, $this->translationAttributes);
-
     }
 
     public function getLanguageSuffix($name)
@@ -204,6 +220,8 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         foreach ($this->translationAttributes as $name) {
             $validators->add(CValidator::createValidator('safe', $owner, $name, array()));
         }
+
+        $this->messageSourceComponent = $this->displayedMessageSourceComponent;
     }
 
     public function afterSave($event)
@@ -228,10 +246,17 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 
             $sourceMessage = $this->getSourceMessage($originalAttribute);
             if (!isset($sourceMessages[md5($sourceMessage)])) {
-                $sourceMessages[md5($sourceMessage)] = array('message' => $sourceMessage, 'category' => $this->getCategory($originalAttribute), 'translations' => array());
+                $sourceMessages[md5($sourceMessage)] = array(
+                    'message' => $sourceMessage,
+                    'category' => $this->getCategory($originalAttribute),
+                    'translations' => array()
+                );
             }
 
-            $sourceMessages[md5($sourceMessage)]['translations'][] = array('language' => $language, 'translation' => $value);
+            $sourceMessages[md5($sourceMessage)]['translations'][] = array(
+                'language' => $language,
+                'translation' => $value
+            );
         }
 
         // do nothing if we have nothing to save
@@ -256,36 +281,47 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
             foreach ($sourceMessages as $sourceMessage) {
 
                 $attributes = array('category' => $sourceMessage['category'], 'message' => $sourceMessage['message']);
-                if (($model = SourceMessage::model()->find('message=:message AND category=:category', $attributes)) === null) {
+                if (($model = SourceMessage::model()->find(
+                        'message=:message AND category=:category',
+                        $attributes
+                    )) === null
+                ) {
                     $model = new SourceMessage();
                     $model->attributes = $attributes;
                     if (!$model->save()) {
-                        throw new CException('Attribute source message ' . $attributes['category'] . ' - ' . $attributes['message'] . ' could not be added to the SourceMessage table. Errors: ' . print_r($model->errors, true));
+                        throw new CException('Attribute source message ' . $attributes['category'] . ' - ' . $attributes['message'] . ' could not be added to the SourceMessage table. Errors: ' . print_r(
+                            $model->errors,
+                            true
+                        ));
                     }
                 }
                 if ($model->id) {
                     foreach ($sourceMessage['translations'] as $translation) {
                         $attributes = array('id' => $model->id, 'language' => $translation['language']);
-                        if (($messageModel = Message::model()->find('id=:id AND language=:language', $attributes)) === null) {
+                        if (($messageModel = Message::model()->find(
+                                'id=:id AND language=:language',
+                                $attributes
+                            )) === null
+                        ) {
                             $messageModel = new Message;
                         }
                         $messageModel->id = $attributes['id'];
                         $messageModel->language = $attributes['language'];
                         $messageModel->translation = $translation['translation'];
                         if (!$messageModel->save()) {
-                            throw new CException('Attribute message ' . $attributes['category'] . ' - ' . $attributes['message'] . ' - ' . $language . ' - ' . $value . ' could not be saved to the Message table. Errors: ' . print_r($messageModel->errors, true));
+                            throw new CException('Attribute message ' . $attributes['category'] . ' - ' . $attributes['message'] . ' - ' . $language . ' - ' . $value . ' could not be saved to the Message table. Errors: ' . print_r(
+                                $messageModel->errors,
+                                true
+                            ));
                         }
                     }
                 }
-
             }
 
             return $this->afterSavingTranslations();
-
         }
 
         throw new CException("Cannot save translations with " . get_class(Yii::app()->messages));
-
     }
 
     protected function afterSavingTranslations()
@@ -299,6 +335,15 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         return true;
     }
 
+    public function edited()
+    {
+        $clone = clone $this;
+        $ownerClone = clone $this->owner;
+        $ownerClone->attachBehavior($this->name, $clone);
+        $ownerClone->asa($this->name)->messageSourceComponent = $this->editedMessageSourceComponent;
+        return $ownerClone;
+    }
+
     /**
      * Expose the behavior
      */
@@ -306,5 +351,4 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     {
         return $this;
     }
-
 }
