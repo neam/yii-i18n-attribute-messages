@@ -293,12 +293,15 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
                         }
                     }
                 }
+
             }
 
             return $this->afterSavingTranslations();
+
         }
 
         throw new CException("Cannot save translations with " . get_class(Yii::app()->messages));
+
     }
 
     protected function afterSavingTranslations()
@@ -328,4 +331,5 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     {
         return $this;
     }
+
 }
