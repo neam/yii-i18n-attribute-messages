@@ -10,7 +10,7 @@
 class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 {
     /**
-     * @var string
+     * @var string name of this behavior (used for attaching it to an owner)..
      */
     public $name = 'i18n-attribute-messages';
 
@@ -49,6 +49,7 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
      */
     public function __get($name)
     {
+
         if (!$this->handlesProperty($name)) {
             return parent::__get($name);
         }
@@ -80,14 +81,9 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
                 return null;
             }
 
-            return Yii::t(
-                $this->getCategory($withoutSuffix),
-                $this->getSourceMessage($withoutSuffix),
-                array(),
-                $this->messageSourceComponent,
-                $lang
-            );
+            return Yii::t($this->getCategory($withoutSuffix), $this->getSourceMessage($withoutSuffix), array(), $this->messageSourceComponent, $lang);
         }
+
     }
 
     /**
@@ -121,6 +117,7 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
         if (in_array($withoutSuffix, $this->translationAttributes)) {
             $this->dirtyAttributes[$withSuffix] = $value; // Always store with suffix since we are interested in the language while setting the attribute, not while saving
         }
+
     }
 
     /**
@@ -162,6 +159,7 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
             return $this->dirtyAttributes[$originalAttribute . '_' . $lang];
         }
         return in_array($originalAttribute, $this->translationAttributes);
+
     }
 
     public function getLanguageSuffix($name)
@@ -246,17 +244,10 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 
             $sourceMessage = $this->getSourceMessage($originalAttribute);
             if (!isset($sourceMessages[md5($sourceMessage)])) {
-                $sourceMessages[md5($sourceMessage)] = array(
-                    'message' => $sourceMessage,
-                    'category' => $this->getCategory($originalAttribute),
-                    'translations' => array()
-                );
+                $sourceMessages[md5($sourceMessage)] = array('message' => $sourceMessage, 'category' => $this->getCategory($originalAttribute), 'translations' => array());
             }
 
-            $sourceMessages[md5($sourceMessage)]['translations'][] = array(
-                'language' => $language,
-                'translation' => $value
-            );
+            $sourceMessages[md5($sourceMessage)]['translations'][] = array('language' => $language, 'translation' => $value);
         }
 
         // do nothing if we have nothing to save
@@ -281,38 +272,24 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
             foreach ($sourceMessages as $sourceMessage) {
 
                 $attributes = array('category' => $sourceMessage['category'], 'message' => $sourceMessage['message']);
-                if (($model = SourceMessage::model()->find(
-                        'message=:message AND category=:category',
-                        $attributes
-                    )) === null
-                ) {
+                if (($model = SourceMessage::model()->find('message=:message AND category=:category', $attributes)) === null) {
                     $model = new SourceMessage();
                     $model->attributes = $attributes;
                     if (!$model->save()) {
-                        throw new CException('Attribute source message ' . $attributes['category'] . ' - ' . $attributes['message'] . ' could not be added to the SourceMessage table. Errors: ' . print_r(
-                            $model->errors,
-                            true
-                        ));
+                        throw new CException('Attribute source message ' . $attributes['category'] . ' - ' . $attributes['message'] . ' could not be added to the SourceMessage table. Errors: ' . print_r($model->errors, true));
                     }
                 }
                 if ($model->id) {
                     foreach ($sourceMessage['translations'] as $translation) {
                         $attributes = array('id' => $model->id, 'language' => $translation['language']);
-                        if (($messageModel = Message::model()->find(
-                                'id=:id AND language=:language',
-                                $attributes
-                            )) === null
-                        ) {
+                        if (($messageModel = Message::model()->find('id=:id AND language=:language', $attributes)) === null) {
                             $messageModel = new Message;
                         }
                         $messageModel->id = $attributes['id'];
                         $messageModel->language = $attributes['language'];
                         $messageModel->translation = $translation['translation'];
                         if (!$messageModel->save()) {
-                            throw new CException('Attribute message ' . $attributes['category'] . ' - ' . $attributes['message'] . ' - ' . $language . ' - ' . $value . ' could not be saved to the Message table. Errors: ' . print_r(
-                                $messageModel->errors,
-                                true
-                            ));
+                            throw new CException('Attribute message ' . $attributes['category'] . ' - ' . $attributes['message'] . ' - ' . $language . ' - ' . $value . ' could not be saved to the Message table. Errors: ' . print_r($messageModel->errors, true));
                         }
                     }
                 }
