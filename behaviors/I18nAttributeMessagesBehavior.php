@@ -10,9 +10,14 @@
 class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 {
     /**
-     * @var string name of this behavior (used for attaching it to an owner)..
+     * The behavior key used in application configuration to reference/attach the behavior from
+     * within an active record's behaviors() method.
+     * used for attaching it to an owner after cloning the active record
+     * and is necessary for the edited() method to work.
+     *
+     * @var string $behaviorKey name/key of this behavior as attached to active record.
      */
-    public $name = 'i18n-attribute-messages';
+    public $behaviorKey = 'i18n-attribute-messages';
 
     /**
      * @var array list of attributes to translate
@@ -319,8 +324,8 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     {
         $clone = clone $this;
         $ownerClone = clone $this->owner;
-        $ownerClone->attachBehavior($this->name, $clone);
-        $ownerClone->asa($this->name)->messageSourceComponent = $this->editedMessageSourceComponent;
+        $ownerClone->attachBehavior($this->behaviorKey, $clone);
+        $ownerClone->asa($this->behaviorKey)->messageSourceComponent = $this->editedMessageSourceComponent;
         return $ownerClone;
     }
 
