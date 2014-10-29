@@ -18,6 +18,11 @@ class I18nAttributeMessagesCommand extends CConsoleCommand
     public $migrationPath = 'application.migrations';
 
     /**
+     * @var string
+     */
+    public $modelAlias = 'application.models';
+
+    /**
      * @var array
      */
     public $models = array();
@@ -262,7 +267,7 @@ class ' . $migrationName . ' extends CDbMigration
     {
         $models = array();
         $aliases = array();
-        $aliases[] = 'application.models';
+        $aliases[] = $this->modelAlias;
         foreach (Yii::app()->getModules() as $moduleName => $config) {
             if ($moduleName != 'gii') {
                 $aliases[] = $moduleName . ".models";
