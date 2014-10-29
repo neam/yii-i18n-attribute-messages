@@ -231,7 +231,7 @@ class I18nAttributeMessagesCommand extends CConsoleCommand
             exit("Database up to date\n");
         }
 
-        $migrationName = 'm' . gmdate('ymd_His') . '_i18n';
+        $migrationName = 'm' . gmdate('ymd_His') . '_i18n_attribute_messages';
 
         $phpCode = '<?php
 class ' . $migrationName . ' extends CDbMigration
