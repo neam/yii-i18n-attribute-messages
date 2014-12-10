@@ -134,7 +134,7 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
     }
 
     /**
-     * Expose translatable attributes as writeable
+     * Expose translatable attributes as writable
      */
     public function canSetProperty($name)
     {
