@@ -192,7 +192,12 @@ class I18nAttributeMessagesBehavior extends CActiveRecordBehavior
 
     public function getCategory($originalAttribute)
     {
-        return substr($this->owner->id . '-a-' . get_class($this->owner) . '-' . $originalAttribute, 0, 32);
+        return static::getContext($this->owner->id, get_class($this->owner), $originalAttribute);
+    }
+
+    static public function getContext($id, $modelClass, $originalAttribute)
+    {
+        return substr($id . '-a-' . $modelClass . '-' . $originalAttribute, 0, 32);
     }
 
     public function getSourceMessage($originalAttribute)
